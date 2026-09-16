@@ -2,7 +2,7 @@ page 60 (
     name: Inbound Receipts
     alias: INBOUND-RECEIPTS
     title: Inbound Receipts
-    pageGroup: @inbound
+    pageGroup: @inventory
     appearance {
         pageTemplate: @/standard
         templateOptions: #DEFAULT#
@@ -12,7 +12,7 @@ page 60 (
         formAutoComplete: false
     }
     help {
-        helpText: Inbound receipt headers (FR-02). Create a receipt here, then add/receive lines on the Inbound Receipt Lines page. Supplier and Warehouse are selected from active master lists. Business logic (receive, putaway, complete) runs through PKG_INBOUND, not direct edits to STATUS.
+        helpText: Inbound receipt headers and lines (FR-02). Select a receipt row above to see/edit its lines below (one receipt can have many lines); new lines are automatically linked to the selected receipt. Supplier and Warehouse are selected from active master lists. Business logic (receive, putaway, complete) runs through PKG_INBOUND, not direct edits to STATUS.
     }
 
     region breadcrumb (
@@ -285,12 +285,290 @@ page 60 (
         )
     )
 
+    region INBOUND_RECEIPT_LINES_GRID (
+        name: Inbound Receipt Lines
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select
+                    line_id,
+                    receipt_id,
+                    item_id,
+                    lot_id,
+                    expected_qty,
+                    received_qty,
+                    putaway_location_id,
+                    status
+                from inbound_receipt_line
+                order by line_id
+                ```
+        }
+        layout {
+            sequence: 30
+            slot: BODY
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
+        masterDetail {
+            masterRegion: @INBOUND_RECEIPTS_GRID
+        }
+        pagination {
+            type: page
+            showTotalCount: true
+        }
+        messages {
+            whenNoDataFound: No lines for the selected receipt. Select a receipt above, then add a line here.
+        }
+        toolbar {
+            controls: [
+                searchCol
+                searchField
+                actionsMenu
+                resetButton
+                saveButton
+            ]
+        }
+        download {
+            formats: [
+                csv
+                excel
+            ]
+        }
+
+        savedReport PRIMARY (
+            visibility: primary
+            view {
+                default: grid
+            }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    sequence: 0
+                }
+            )
+            displayColumn (
+                column: @LINE_ID
+                layout {
+                    sequence: 1
+                }
+            )
+            displayColumn (
+                column: @ITEM_ID
+                layout {
+                    sequence: 2
+                }
+            )
+            displayColumn (
+                column: @LOT_ID
+                layout {
+                    sequence: 3
+                }
+            )
+            displayColumn (
+                column: @EXPECTED_QTY
+                layout {
+                    sequence: 4
+                }
+            )
+            displayColumn (
+                column: @RECEIVED_QTY
+                layout {
+                    sequence: 5
+                }
+            )
+            displayColumn (
+                column: @PUTAWAY_LOCATION_ID
+                layout {
+                    sequence: 6
+                }
+            )
+            displayColumn (
+                column: @STATUS
+                layout {
+                    sequence: 7
+                }
+            )
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 5
+            }
+        )
+
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+        )
+
+        column LINE_ID (
+            type: hidden
+            layout {
+                sequence: 15
+            }
+            source {
+                databaseColumn: LINE_ID
+                dataType: number
+                primaryKey: true
+            }
+        )
+
+        column LINE_RECEIPT_ID (
+            type: hidden
+            layout {
+                sequence: 16
+            }
+            masterDetail {
+                masterColumn: @RECEIPT_ID
+            }
+            source {
+                databaseColumn: RECEIPT_ID
+                dataType: number
+            }
+        )
+
+        column ITEM_ID (
+            type: selectList
+            heading {
+                heading: Item
+            }
+            layout {
+                sequence: 20
+            }
+            lov {
+                type: sharedComponent
+                lov: @item-active
+            }
+            source {
+                databaseColumn: ITEM_ID
+                dataType: number
+            }
+        )
+
+        column LOT_ID (
+            type: selectList
+            heading {
+                heading: Lot
+            }
+            layout {
+                sequence: 30
+            }
+            lov {
+                type: sharedComponent
+                lov: @lot-any
+                displayExtraValues: true
+            }
+            source {
+                databaseColumn: LOT_ID
+                dataType: number
+            }
+        )
+
+        column EXPECTED_QTY (
+            type: numberField
+            heading {
+                heading: Expected Qty
+                alignment: end
+            }
+            layout {
+                sequence: 40
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: EXPECTED_QTY
+                dataType: number
+            }
+        )
+
+        column RECEIVED_QTY (
+            type: numberField
+            heading {
+                heading: Received Qty
+                alignment: end
+            }
+            layout {
+                sequence: 50
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: RECEIVED_QTY
+                dataType: number
+            }
+        )
+
+        column PUTAWAY_LOCATION_ID (
+            type: selectList
+            heading {
+                heading: Putaway Location
+            }
+            layout {
+                sequence: 60
+            }
+            lov {
+                type: sharedComponent
+                lov: @location-active
+                displayExtraValues: true
+            }
+            source {
+                databaseColumn: PUTAWAY_LOCATION_ID
+                dataType: number
+            }
+        )
+
+        column STATUS (
+            type: selectList
+            heading {
+                heading: Status
+            }
+            layout {
+                sequence: 70
+            }
+            lov {
+                type: staticValues
+                staticValues: STATIC:Pending;PENDING,Received;RECEIVED,Putaway;PUTAWAY,Short;SHORT,Cancelled;CANCELLED
+            }
+            source {
+                databaseColumn: STATUS
+                dataType: varchar2
+            }
+        )
+    )
+
     process INBOUND_RECEIPTS_GRID_ARP (
         name: Inbound Receipts - Save Data
         type: interactiveGridAutoRowProcessing
         editableRegion: @INBOUND_RECEIPTS_GRID
         execution {
             sequence: 10
+        }
+    )
+
+    process INBOUND_RECEIPT_LINES_GRID_ARP (
+        name: Inbound Receipt Lines - Save Data
+        type: interactiveGridAutoRowProcessing
+        editableRegion: @INBOUND_RECEIPT_LINES_GRID
+        execution {
+            sequence: 20
         }
     )
 

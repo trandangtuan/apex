@@ -253,50 +253,18 @@ list navigation-menu (
         }
     )
 
-    entry inbound (
-        label: Inbound
-        icon {
-            imageIconCssClasses: fa-truck
-        }
-        layout {
-            sequence: 40
-        }
-        link {
-            target: {
-                type: url
-                url: #
-            }
-        }
-    )
-
     entry inbound-receipts (
         label: Inbound Receipts
         icon {
             imageIconCssClasses: fa-truck
         }
         layout {
-            sequence: 10
-            parentEntry: @inbound
+            sequence: 30
+            parentEntry: @inventory
         }
         link {
             target: {
                 page: 60
-            }
-        }
-    )
-
-    entry inbound-receipt-lines (
-        label: Inbound Receipt Lines
-        icon {
-            imageIconCssClasses: fa-list-ol
-        }
-        layout {
-            sequence: 20
-            parentEntry: @inbound
-        }
-        link {
-            target: {
-                page: 70
             }
         }
     )

@@ -110,22 +110,6 @@ breadcrumb breadcrumb (
         }
     )
 
-    entry inbound-receipt-lines (
-        name: Inbound Receipt Lines
-        pageNumber: 70
-        execution {
-            sequence: 80
-        }
-        appearance {
-            parentEntry: @inbound-receipts
-        }
-        link {
-            target: {
-                page: 70
-            }
-        }
-    )
-
     entry customers (
         name: Customers
         pageNumber: 80

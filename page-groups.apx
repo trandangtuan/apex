@@ -10,10 +10,6 @@ pageGroup inventory (
     name: Inventory
 )
 
-pageGroup inbound (
-    name: Inbound
-)
-
 pageGroup outbound (
     name: Outbound
 )
