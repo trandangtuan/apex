@@ -1,0 +1,338 @@
+breadcrumb breadcrumb (
+    name: Breadcrumb
+
+    entry home (
+        name: Home
+        pageNumber: 1
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 1
+            }
+        }
+    )
+
+    entry items (
+        name: Items
+        pageNumber: 10
+        execution {
+            sequence: 20
+        }
+        appearance {
+            parentEntry: @home
+        }
+        link {
+            target: {
+                page: 10
+            }
+        }
+    )
+
+    entry locations (
+        name: Locations
+        pageNumber: 20
+        execution {
+            sequence: 30
+        }
+        appearance {
+            parentEntry: @home
+        }
+        link {
+            target: {
+                page: 20
+            }
+        }
+    )
+
+    entry lots (
+        name: Lots
+        pageNumber: 30
+        execution {
+            sequence: 40
+        }
+        appearance {
+            parentEntry: @home
+        }
+        link {
+            target: {
+                page: 30
+            }
+        }
+    )
+
+    entry inventory-balance (
+        name: Inventory Balance
+        pageNumber: 40
+        execution {
+            sequence: 50
+        }
+        appearance {
+            parentEntry: @home
+        }
+        link {
+            target: {
+                page: 40
+            }
+        }
+    )
+
+    entry inventory-transactions (
+        name: Inventory Transactions
+        pageNumber: 50
+        execution {
+            sequence: 60
+        }
+        appearance {
+            parentEntry: @home
+        }
+        link {
+            target: {
+                page: 50
+            }
+        }
+    )
+
+    entry inbound-receipts (
+        name: Inbound Receipts
+        pageNumber: 60
+        execution {
+            sequence: 70
+        }
+        appearance {
+            parentEntry: @home
+        }
+        link {
+            target: {
+                page: 60
+            }
+        }
+    )
+
+    entry inbound-receipt-lines (
+        name: Inbound Receipt Lines
+        pageNumber: 70
+        execution {
+            sequence: 80
+        }
+        appearance {
+            parentEntry: @inbound-receipts
+        }
+        link {
+            target: {
+                page: 70
+            }
+        }
+    )
+
+    entry customers (
+        name: Customers
+        pageNumber: 80
+        execution {
+            sequence: 90
+        }
+        appearance {
+            parentEntry: @home
+        }
+        link {
+            target: {
+                page: 80
+            }
+        }
+    )
+
+    entry outbound-orders (
+        name: Outbound Orders
+        pageNumber: 90
+        execution {
+            sequence: 100
+        }
+        appearance {
+            parentEntry: @home
+        }
+        link {
+            target: {
+                page: 90
+            }
+        }
+    )
+
+    entry outbound-order-lines (
+        name: Outbound Order Lines
+        pageNumber: 100
+        execution {
+            sequence: 110
+        }
+        appearance {
+            parentEntry: @outbound-orders
+        }
+        link {
+            target: {
+                page: 100
+            }
+        }
+    )
+
+    entry pick-tasks (
+        name: Pick Tasks
+        pageNumber: 110
+        execution {
+            sequence: 120
+        }
+        appearance {
+            parentEntry: @outbound-orders
+        }
+        link {
+            target: {
+                page: 110
+            }
+        }
+    )
+
+    entry shipments (
+        name: Shipments
+        pageNumber: 120
+        execution {
+            sequence: 130
+        }
+        appearance {
+            parentEntry: @outbound-orders
+        }
+        link {
+            target: {
+                page: 120
+            }
+        }
+    )
+
+    entry kpi-baseline (
+        name: KPI Baseline
+        pageNumber: 130
+        execution {
+            sequence: 140
+        }
+        appearance {
+            parentEntry: @home
+        }
+        link {
+            target: {
+                page: 130
+            }
+        }
+    )
+
+    entry quality-inspections (
+        name: Quality Inspections
+        pageNumber: 140
+        execution {
+            sequence: 150
+        }
+        appearance {
+            parentEntry: @home
+        }
+        link {
+            target: {
+                page: 140
+            }
+        }
+    )
+
+    entry quality-holds (
+        name: Quality Holds
+        pageNumber: 150
+        execution {
+            sequence: 160
+        }
+        appearance {
+            parentEntry: @home
+        }
+        link {
+            target: {
+                page: 150
+            }
+        }
+    )
+
+    entry operations-dashboard (
+        name: Operations Dashboard
+        pageNumber: 160
+        execution {
+            sequence: 170
+        }
+        appearance {
+            parentEntry: @home
+        }
+        link {
+            target: {
+                page: 160
+            }
+        }
+    )
+
+    entry integration-monitor (
+        name: Integration Monitor
+        pageNumber: 170
+        execution {
+            sequence: 180
+        }
+        appearance {
+            parentEntry: @home
+        }
+        link {
+            target: {
+                page: 170
+            }
+        }
+    )
+
+    entry uom (
+        name: UOM
+        pageNumber: 180
+        execution {
+            sequence: 190
+        }
+        appearance {
+            parentEntry: @home
+        }
+        link {
+            target: {
+                page: 180
+            }
+        }
+    )
+
+    entry warehouses (
+        name: Warehouses
+        pageNumber: 190
+        execution {
+            sequence: 200
+        }
+        appearance {
+            parentEntry: @home
+        }
+        link {
+            target: {
+                page: 190
+            }
+        }
+    )
+
+    entry suppliers (
+        name: Suppliers
+        pageNumber: 200
+        execution {
+            sequence: 210
+        }
+        appearance {
+            parentEntry: @home
+        }
+        link {
+            target: {
+                page: 200
+            }
+        }
+    )
+
+)
+

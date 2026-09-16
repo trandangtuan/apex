@@ -1,0 +1,245 @@
+page 160 (
+    name: Operations Dashboard
+    alias: OPERATIONS-DASHBOARD
+    title: Operations Dashboard
+    pageGroup: @reporting
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText: Warehouse operations snapshot (FR-08). KPI cards and charts read live data from ITEM, INVENTORY_BALANCE, OUTBOUND_ORDER, PICK_TASK, QUALITY_HOLD and INVENTORY_TRANSACTION -- no separate reporting tables needed yet.
+    }
+
+    region breadcrumb (
+        name: Operations Dashboard
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: REGION_POSITION_01
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region dashboard-kpis (
+        name: Key Metrics
+        type: themeTemplateComponent/metricCard
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select 1 as id, 'Active Items' as title, to_char(count(*)) as metric, 'Status = ACTIVE' as meta
+                  from item
+                 where status = 'ACTIVE'
+                union all
+                select 2, 'Total On-Hand Qty', to_char(nvl(sum(qty_on_hand), 0)), 'All locations'
+                  from inventory_balance
+                union all
+                select 3, 'Open Outbound Orders', to_char(count(*)), 'Not shipped or cancelled'
+                  from outbound_order
+                 where status not in ('SHIPPED', 'CANCELLED')
+                union all
+                select 4, 'Pending Pick Tasks', to_char(count(*)), 'Awaiting scan confirmation'
+                  from pick_task
+                 where status in ('PENDING', 'ASSIGNED', 'IN_PROGRESS')
+                union all
+                select 5, 'Active Quality Holds', to_char(count(*)), 'FR-07'
+                  from quality_hold
+                 where status = 'ACTIVE'
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: BODY
+        }
+        appearance {
+            template: @/blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            display: report
+        }
+        settings {
+            title: &TITLE.
+            metric: &METRIC.
+            meta: &META.
+            layout: 5Columns
+        }
+
+        column ID (
+            layout {
+                sequence: 10
+            }
+            source {
+                databaseColumn: ID
+                dataType: number
+                primaryKey: true
+            }
+        )
+
+        column TITLE (
+            layout {
+                sequence: 20
+            }
+            source {
+                databaseColumn: TITLE
+                dataType: varchar2
+            }
+        )
+
+        column METRIC (
+            layout {
+                sequence: 30
+            }
+            source {
+                databaseColumn: METRIC
+                dataType: varchar2
+            }
+        )
+
+        column META (
+            layout {
+                sequence: 40
+            }
+            source {
+                databaseColumn: META
+                dataType: varchar2
+            }
+        )
+    )
+
+    region orders-by-status (
+        name: Orders By Status
+        type: chart
+        layout {
+            sequence: 30
+            slot: BODY
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noBorder
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
+                t-Region--scrollBody
+            ]
+        }
+        chart {
+            type: pie
+        }
+        title {
+            title: Orders By Status
+        }
+        legend {
+            show: true
+        }
+
+        series orders-by-status (
+            name: Orders By Status
+            execution {
+                sequence: 10
+            }
+            source {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    select status as label, count(*) as value
+                      from outbound_order
+                     group by status
+                    ```
+            }
+            columnMapping {
+                label: LABEL
+                value: VALUE
+            }
+            label {
+                show: true
+            }
+        )
+    )
+
+    region transactions-by-type (
+        name: Inventory Transactions By Type
+        type: chart
+        layout {
+            sequence: 40
+            slot: BODY
+            startNewRow: false
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noBorder
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
+                t-Region--scrollBody
+            ]
+        }
+        chart {
+            type: bar
+        }
+        title {
+            title: Inventory Transactions By Type
+        }
+        legend {
+            show: false
+        }
+
+        series transactions-by-type (
+            name: Inventory Transactions By Type
+            execution {
+                sequence: 10
+            }
+            source {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    select txn_type as label, count(*) as value
+                      from inventory_transaction
+                     group by txn_type
+                    ```
+            }
+            columnMapping {
+                label: LABEL
+                value: VALUE
+            }
+        )
+
+        axis x (
+            name: x
+            value {
+            }
+            majorTicks {
+                show: false
+            }
+        )
+
+        axis y (
+            name: y
+            value {
+                format: decimal
+                decimalPlaces: 0
+                formatScaling: none
+            }
+            majorTicks {
+                show: true
+            }
+        )
+    )
+
+)

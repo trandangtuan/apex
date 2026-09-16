@@ -1,0 +1,313 @@
+page 90 (
+    name: Outbound Orders
+    alias: OUTBOUND-ORDERS
+    title: Outbound Orders
+    pageGroup: @outbound
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText: Outbound order headers (FR-04). Select an order and click Edit to open it, or use New Order to create one. Customer and Warehouse are selected from their active master lists. STATUS normally moves through received/allocated/picking/picked/packed/shipped automatically via PKG_OUTBOUND/PKG_PICKING/PKG_PACKING/PKG_SHIPMENT, not by direct edit.
+    }
+
+    region breadcrumb (
+        name: Outbound Orders
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: REGION_POSITION_01
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region actions (
+        name: Actions
+        type: staticContent
+        layout {
+            sequence: 15
+            slot: BODY
+        }
+        appearance {
+            template: @/blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P90_EDIT_SELECT (
+        type: selectList
+        label {
+            label: Select Order to Edit
+        }
+        lov {
+            type: sharedComponent
+            lov: @outbound-order-any
+        }
+        layout {
+            sequence: 10
+            region: @actions
+            slot: regionBody
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        help {
+            helpText: Pick an order, then click Edit to open it.
+        }
+    )
+
+    button edit-order (
+        buttonName: EDIT_ORDER
+        label: Edit
+        layout {
+            sequence: 20
+            region: @actions
+            slot: regionBody
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 91
+                items: {
+                    P91_ORDER_ID: &P90_EDIT_SELECT.
+                }
+                clearCache: 91
+            }
+        }
+    )
+
+    button create-order (
+        buttonName: CREATE_ORDER
+        label: New Order
+        layout {
+            sequence: 30
+            region: @actions
+            slot: regionBody
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 91
+                clearCache: 91
+            }
+        }
+    )
+
+    region OUTBOUND_ORDERS_REPORT (
+        name: Outbound Orders
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select
+                    o.order_id,
+                    o.order_number,
+                    c.customer_code,
+                    w.warehouse_code,
+                    o.order_source,
+                    o.order_date,
+                    o.required_ship_date,
+                    o.priority,
+                    o.status
+                from outbound_order o
+                join customer c on c.customer_id = o.customer_id
+                join warehouse w on w.warehouse_id = o.warehouse_id
+                order by o.order_id desc
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: BODY
+        }
+        appearance {
+            template: @/interactive-report
+            templateOptions: #DEFAULT#
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        messages {
+            whenNoDataFound: No outbound orders found.
+        }
+        download {
+            formats: [
+                csv
+                excel
+            ]
+        }
+
+        column ORDER_ID (
+            type: hidden
+            heading {
+                heading: Order Id
+            }
+            layout {
+                sequence: 10
+            }
+            source {
+                dataType: NUMBER
+            }
+        )
+
+        column ORDER_NUMBER (
+            type: plainText
+            heading {
+                heading: Order Number
+            }
+            layout {
+                sequence: 20
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column CUSTOMER_CODE (
+            type: plainText
+            heading {
+                heading: Customer
+            }
+            layout {
+                sequence: 30
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column WAREHOUSE_CODE (
+            type: plainText
+            heading {
+                heading: Warehouse
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column ORDER_SOURCE (
+            type: plainText
+            heading {
+                heading: Order Source
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column ORDER_DATE (
+            type: plainText
+            heading {
+                heading: Order Date
+            }
+            layout {
+                sequence: 60
+            }
+            appearance {
+                formatMask: DD-MON-YYYY
+            }
+            source {
+                dataType: DATE
+            }
+        )
+
+        column REQUIRED_SHIP_DATE (
+            type: plainText
+            heading {
+                heading: Required Ship Date
+            }
+            layout {
+                sequence: 70
+            }
+            appearance {
+                formatMask: DD-MON-YYYY
+            }
+            source {
+                dataType: DATE
+            }
+        )
+
+        column PRIORITY (
+            type: plainText
+            heading {
+                heading: Priority
+            }
+            layout {
+                sequence: 80
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column STATUS (
+            type: plainText
+            heading {
+                heading: Status
+            }
+            layout {
+                sequence: 90
+            }
+            source {
+                dataType: STRING
+            }
+        )
+    )
+
+    dynamicAction refresh-on-edit (
+        name: Refresh on Edit
+        execution {
+            sequence: 10
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @OUTBOUND_ORDERS_REPORT
+        }
+
+        action refresh-outbound-orders-report (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @OUTBOUND_ORDERS_REPORT
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+    )
+
+)

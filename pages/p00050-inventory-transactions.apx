@@ -1,0 +1,238 @@
+page 50 (
+    name: Inventory Transactions
+    alias: INVENTORY-TRANSACTIONS
+    title: Inventory Transactions
+    pageGroup: @inventory
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText: Read-only audit trail of every inventory balance change (FR-01, FR-06). Rows are written only by PKG_INVENTORY.post_transaction, never edited directly.
+    }
+
+    region breadcrumb (
+        name: Inventory Transactions
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: REGION_POSITION_01
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region INVENTORY_TRANSACTIONS_REPORT (
+        name: Inventory Transactions
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select
+                    t.txn_id,
+                    t.txn_ts,
+                    t.txn_type,
+                    i.item_code,
+                    i.item_name,
+                    l.location_code,
+                    lt.lot_number,
+                    t.qty,
+                    t.source_doc_type,
+                    t.source_doc_id,
+                    t.created_by
+                from inventory_transaction t
+                join item i on i.item_id = t.item_id
+                join location l on l.location_id = t.location_id
+                left join lot lt on lt.lot_id = t.lot_id
+                order by t.txn_id desc
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: BODY
+        }
+        appearance {
+            template: @/interactive-report
+            templateOptions: #DEFAULT#
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        messages {
+            whenNoDataFound: No inventory transactions found.
+        }
+        download {
+            formats: [
+                csv
+                excel
+            ]
+        }
+
+        column TXN_ID (
+            type: hidden
+            heading {
+                heading: Txn Id
+            }
+            layout {
+                sequence: 10
+            }
+            source {
+                dataType: NUMBER
+            }
+        )
+
+        column TXN_TS (
+            type: plainText
+            heading {
+                heading: Timestamp
+            }
+            layout {
+                sequence: 20
+            }
+            appearance {
+                formatMask: DD-MON-YYYY HH24:MI:SS
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column TXN_TYPE (
+            type: plainText
+            heading {
+                heading: Type
+            }
+            layout {
+                sequence: 30
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column ITEM_CODE (
+            type: plainText
+            heading {
+                heading: Item Code
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column ITEM_NAME (
+            type: plainText
+            heading {
+                heading: Item Name
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column LOCATION_CODE (
+            type: plainText
+            heading {
+                heading: Location
+            }
+            layout {
+                sequence: 60
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column LOT_NUMBER (
+            type: plainText
+            heading {
+                heading: Lot Number
+            }
+            layout {
+                sequence: 70
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column QTY (
+            type: plainText
+            heading {
+                heading: Qty
+                alignment: end
+            }
+            layout {
+                sequence: 80
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: S999G999G990D00
+            }
+            source {
+                dataType: NUMBER
+            }
+        )
+
+        column SOURCE_DOC_TYPE (
+            type: plainText
+            heading {
+                heading: Source Doc Type
+            }
+            layout {
+                sequence: 90
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column SOURCE_DOC_ID (
+            type: plainText
+            heading {
+                heading: Source Doc Id
+            }
+            layout {
+                sequence: 100
+            }
+            source {
+                dataType: NUMBER
+            }
+        )
+
+        column CREATED_BY (
+            type: plainText
+            heading {
+                heading: Created By
+            }
+            layout {
+                sequence: 110
+            }
+            source {
+                dataType: STRING
+            }
+        )
+    )
+
+)

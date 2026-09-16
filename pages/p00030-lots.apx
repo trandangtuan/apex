@@ -1,0 +1,178 @@
+page 30 (
+    name: Lots
+    alias: LOTS
+    title: Lots
+    pageGroup: @inventory
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText: Traceability view of item lots / batches (FR-01). QC Status is managed by the future quality management workflow (FR-07).
+    }
+
+    region breadcrumb (
+        name: Lots
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: REGION_POSITION_01
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region LOTS_REPORT (
+        name: Lots
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select
+                    lt.lot_id,
+                    i.item_code,
+                    i.item_name,
+                    lt.lot_number,
+                    lt.manufacture_date,
+                    lt.expiry_date,
+                    lt.qc_status
+                from lot lt
+                join item i on i.item_id = lt.item_id
+                order by lt.lot_id desc
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: BODY
+        }
+        appearance {
+            template: @/interactive-report
+            templateOptions: #DEFAULT#
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        messages {
+            whenNoDataFound: No lots found.
+        }
+        download {
+            formats: [
+                csv
+                excel
+            ]
+        }
+
+        column LOT_ID (
+            type: hidden
+            heading {
+                heading: Lot Id
+            }
+            layout {
+                sequence: 10
+            }
+            source {
+                dataType: NUMBER
+            }
+        )
+
+        column ITEM_CODE (
+            type: plainText
+            heading {
+                heading: Item Code
+            }
+            layout {
+                sequence: 20
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column ITEM_NAME (
+            type: plainText
+            heading {
+                heading: Item Name
+            }
+            layout {
+                sequence: 30
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column LOT_NUMBER (
+            type: plainText
+            heading {
+                heading: Lot Number
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column MANUFACTURE_DATE (
+            type: plainText
+            heading {
+                heading: Manufacture Date
+            }
+            layout {
+                sequence: 50
+            }
+            appearance {
+                formatMask: DD-MON-YYYY
+            }
+            source {
+                dataType: DATE
+            }
+        )
+
+        column EXPIRY_DATE (
+            type: plainText
+            heading {
+                heading: Expiry Date
+            }
+            layout {
+                sequence: 60
+            }
+            appearance {
+                formatMask: DD-MON-YYYY
+            }
+            source {
+                dataType: DATE
+            }
+        )
+
+        column QC_STATUS (
+            type: plainText
+            heading {
+                heading: QC Status
+            }
+            layout {
+                sequence: 70
+            }
+            source {
+                dataType: STRING
+            }
+        )
+    )
+
+)

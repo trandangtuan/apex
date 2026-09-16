@@ -1,0 +1,512 @@
+list navigation-bar (
+    name: Navigation Bar
+
+    entry app-user (
+        label: &APP_USER.
+        icon {
+            imageIconCssClasses: fa-user
+        }
+        layout {
+            sequence: 10
+        }
+        link {
+            target: {
+                type: url
+                url: #
+            }
+        }
+        userDefinedAttributes {
+            2: has-username
+        }
+    )
+
+    entry list_item (
+        label: ---
+        layout {
+            sequence: 20
+            parentEntry: @app-user
+        }
+        link {
+            target: {
+                type: url
+                url: separator
+            }
+        }
+        serverSideCondition {
+            type: userIsAuthenticated
+        }
+    )
+
+    entry sign-out (
+        label: Sign Out
+        icon {
+            imageIconCssClasses: fa-sign-out
+        }
+        layout {
+            sequence: 30
+            parentEntry: @app-user
+        }
+        link {
+            target: {
+                type: url
+                url: &LOGOUT_URL.
+            }
+        }
+        serverSideCondition {
+            type: userIsAuthenticated
+        }
+    )
+
+)
+
+list navigation-menu (
+    name: Navigation Menu
+
+    entry home (
+        label: Home
+        icon {
+            imageIconCssClasses: fa-home
+        }
+        layout {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 1
+            }
+        }
+    )
+
+    entry master-data (
+        label: Master Data
+        icon {
+            imageIconCssClasses: fa-database
+        }
+        layout {
+            sequence: 20
+        }
+        link {
+            target: {
+                type: url
+                url: #
+            }
+        }
+    )
+
+    entry items (
+        label: Items
+        icon {
+            imageIconCssClasses: fa-cube
+        }
+        layout {
+            sequence: 10
+            parentEntry: @master-data
+        }
+        link {
+            target: {
+                page: 10
+            }
+        }
+    )
+
+    entry locations (
+        label: Locations
+        icon {
+            imageIconCssClasses: fa-map-marker
+        }
+        layout {
+            sequence: 20
+            parentEntry: @master-data
+        }
+        link {
+            target: {
+                page: 20
+            }
+        }
+    )
+
+    entry lots (
+        label: Lots
+        icon {
+            imageIconCssClasses: fa-barcode
+        }
+        layout {
+            sequence: 30
+            parentEntry: @master-data
+        }
+        link {
+            target: {
+                page: 30
+            }
+        }
+    )
+
+    entry customers (
+        label: Customers
+        icon {
+            imageIconCssClasses: fa-users
+        }
+        layout {
+            sequence: 40
+            parentEntry: @master-data
+        }
+        link {
+            target: {
+                page: 80
+            }
+        }
+    )
+
+    entry uom (
+        label: Units of Measure
+        icon {
+            imageIconCssClasses: fa-balance-scale
+        }
+        layout {
+            sequence: 50
+            parentEntry: @master-data
+        }
+        link {
+            target: {
+                page: 180
+            }
+        }
+    )
+
+    entry warehouses (
+        label: Warehouses
+        icon {
+            imageIconCssClasses: fa-building
+        }
+        layout {
+            sequence: 60
+            parentEntry: @master-data
+        }
+        link {
+            target: {
+                page: 190
+            }
+        }
+    )
+
+    entry suppliers (
+        label: Suppliers
+        icon {
+            imageIconCssClasses: fa-industry
+        }
+        layout {
+            sequence: 70
+            parentEntry: @master-data
+        }
+        link {
+            target: {
+                page: 200
+            }
+        }
+    )
+
+    entry inventory (
+        label: Inventory
+        icon {
+            imageIconCssClasses: fa-list-alt
+        }
+        layout {
+            sequence: 30
+        }
+        link {
+            target: {
+                type: url
+                url: #
+            }
+        }
+    )
+
+    entry inventory-balance (
+        label: Inventory Balance
+        icon {
+            imageIconCssClasses: fa-list-alt
+        }
+        layout {
+            sequence: 10
+            parentEntry: @inventory
+        }
+        link {
+            target: {
+                page: 40
+            }
+        }
+    )
+
+    entry inventory-transactions (
+        label: Inventory Transactions
+        icon {
+            imageIconCssClasses: fa-history
+        }
+        layout {
+            sequence: 20
+            parentEntry: @inventory
+        }
+        link {
+            target: {
+                page: 50
+            }
+        }
+    )
+
+    entry inbound (
+        label: Inbound
+        icon {
+            imageIconCssClasses: fa-truck
+        }
+        layout {
+            sequence: 40
+        }
+        link {
+            target: {
+                type: url
+                url: #
+            }
+        }
+    )
+
+    entry inbound-receipts (
+        label: Inbound Receipts
+        icon {
+            imageIconCssClasses: fa-truck
+        }
+        layout {
+            sequence: 10
+            parentEntry: @inbound
+        }
+        link {
+            target: {
+                page: 60
+            }
+        }
+    )
+
+    entry inbound-receipt-lines (
+        label: Inbound Receipt Lines
+        icon {
+            imageIconCssClasses: fa-list-ol
+        }
+        layout {
+            sequence: 20
+            parentEntry: @inbound
+        }
+        link {
+            target: {
+                page: 70
+            }
+        }
+    )
+
+    entry outbound (
+        label: Outbound
+        icon {
+            imageIconCssClasses: fa-shopping-cart
+        }
+        layout {
+            sequence: 50
+        }
+        link {
+            target: {
+                type: url
+                url: #
+            }
+        }
+    )
+
+    entry outbound-orders (
+        label: Outbound Orders
+        icon {
+            imageIconCssClasses: fa-shopping-cart
+        }
+        layout {
+            sequence: 10
+            parentEntry: @outbound
+        }
+        link {
+            target: {
+                page: 90
+            }
+        }
+    )
+
+    entry outbound-order-lines (
+        label: Outbound Order Lines
+        icon {
+            imageIconCssClasses: fa-list-ol
+        }
+        layout {
+            sequence: 20
+            parentEntry: @outbound
+        }
+        link {
+            target: {
+                page: 100
+            }
+        }
+    )
+
+    entry pick-tasks (
+        label: Pick Tasks
+        icon {
+            imageIconCssClasses: fa-barcode
+        }
+        layout {
+            sequence: 30
+            parentEntry: @outbound
+        }
+        link {
+            target: {
+                page: 110
+            }
+        }
+    )
+
+    entry shipments (
+        label: Shipments
+        icon {
+            imageIconCssClasses: fa-plane
+        }
+        layout {
+            sequence: 40
+            parentEntry: @outbound
+        }
+        link {
+            target: {
+                page: 120
+            }
+        }
+    )
+
+    entry quality (
+        label: Quality
+        icon {
+            imageIconCssClasses: fa-check-square
+        }
+        layout {
+            sequence: 60
+        }
+        link {
+            target: {
+                type: url
+                url: #
+            }
+        }
+    )
+
+    entry quality-inspections (
+        label: Quality Inspections
+        icon {
+            imageIconCssClasses: fa-check-square
+        }
+        layout {
+            sequence: 10
+            parentEntry: @quality
+        }
+        link {
+            target: {
+                page: 140
+            }
+        }
+    )
+
+    entry quality-holds (
+        label: Quality Holds
+        icon {
+            imageIconCssClasses: fa-ban
+        }
+        layout {
+            sequence: 20
+            parentEntry: @quality
+        }
+        link {
+            target: {
+                page: 150
+            }
+        }
+    )
+
+    entry reporting (
+        label: Reporting
+        icon {
+            imageIconCssClasses: fa-bar-chart
+        }
+        layout {
+            sequence: 70
+        }
+        link {
+            target: {
+                type: url
+                url: #
+            }
+        }
+    )
+
+    entry kpi-baseline (
+        label: KPI Baseline
+        icon {
+            imageIconCssClasses: fa-bar-chart
+        }
+        layout {
+            sequence: 10
+            parentEntry: @reporting
+        }
+        link {
+            target: {
+                page: 130
+            }
+        }
+    )
+
+    entry operations-dashboard (
+        label: Operations Dashboard
+        icon {
+            imageIconCssClasses: fa-dashboard
+        }
+        layout {
+            sequence: 20
+            parentEntry: @reporting
+        }
+        link {
+            target: {
+                page: 160
+            }
+        }
+    )
+
+    entry integration (
+        label: Integration
+        icon {
+            imageIconCssClasses: fa-exchange
+        }
+        layout {
+            sequence: 80
+        }
+        link {
+            target: {
+                type: url
+                url: #
+            }
+        }
+    )
+
+    entry integration-monitor (
+        label: Integration Monitor
+        icon {
+            imageIconCssClasses: fa-exchange
+        }
+        layout {
+            sequence: 10
+            parentEntry: @integration
+        }
+        link {
+            target: {
+                page: 170
+            }
+        }
+    )
+
+)

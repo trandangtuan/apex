@@ -1,0 +1,252 @@
+page 110 (
+    name: Pick Tasks
+    alias: PICK-TASKS
+    title: Pick Tasks
+    pageGroup: @outbound
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText: Read-only pick queue (FR-03, FR-05), sequenced by SEQUENCE_NO (pick path order within an order line). Confirming a pick (barcode/QR scan) must go through PKG_PICKING.confirm_pick so inventory moves correctly; this report does not allow direct edits.
+    }
+
+    region breadcrumb (
+        name: Pick Tasks
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: REGION_POSITION_01
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region PICK_TASKS_REPORT (
+        name: Pick Tasks
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select
+                    t.task_id,
+                    ol.order_id,
+                    o.order_number,
+                    i.item_code,
+                    lt.lot_number,
+                    l.location_code,
+                    t.sequence_no,
+                    t.qty_requested,
+                    t.qty_picked,
+                    t.status,
+                    t.scanned_code,
+                    t.scan_ts
+                from pick_task t
+                join outbound_order_line ol on ol.line_id = t.order_line_id
+                join outbound_order o on o.order_id = ol.order_id
+                join item i on i.item_id = t.item_id
+                join location l on l.location_id = t.from_location_id
+                left join lot lt on lt.lot_id = t.lot_id
+                order by o.order_id desc, t.sequence_no
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: BODY
+        }
+        appearance {
+            template: @/interactive-report
+            templateOptions: #DEFAULT#
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        messages {
+            whenNoDataFound: No pick tasks found.
+        }
+        download {
+            formats: [
+                csv
+                excel
+            ]
+        }
+
+        column TASK_ID (
+            type: hidden
+            heading {
+                heading: Task Id
+            }
+            layout {
+                sequence: 10
+            }
+            source {
+                dataType: NUMBER
+            }
+        )
+
+        column ORDER_ID (
+            type: hidden
+            heading {
+                heading: Order Id
+            }
+            layout {
+                sequence: 20
+            }
+            source {
+                dataType: NUMBER
+            }
+        )
+
+        column ORDER_NUMBER (
+            type: plainText
+            heading {
+                heading: Order Number
+            }
+            layout {
+                sequence: 30
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column ITEM_CODE (
+            type: plainText
+            heading {
+                heading: Item Code
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column LOT_NUMBER (
+            type: plainText
+            heading {
+                heading: Lot Number
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column LOCATION_CODE (
+            type: plainText
+            heading {
+                heading: From Location
+            }
+            layout {
+                sequence: 60
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column SEQUENCE_NO (
+            type: plainText
+            heading {
+                heading: Pick Sequence
+                alignment: end
+            }
+            layout {
+                sequence: 70
+                columnAlignment: end
+            }
+            source {
+                dataType: NUMBER
+            }
+        )
+
+        column QTY_REQUESTED (
+            type: plainText
+            heading {
+                heading: Qty Requested
+                alignment: end
+            }
+            layout {
+                sequence: 80
+                columnAlignment: end
+            }
+            source {
+                dataType: NUMBER
+            }
+        )
+
+        column QTY_PICKED (
+            type: plainText
+            heading {
+                heading: Qty Picked
+                alignment: end
+            }
+            layout {
+                sequence: 90
+                columnAlignment: end
+            }
+            source {
+                dataType: NUMBER
+            }
+        )
+
+        column STATUS (
+            type: plainText
+            heading {
+                heading: Status
+            }
+            layout {
+                sequence: 100
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column SCANNED_CODE (
+            type: plainText
+            heading {
+                heading: Scanned Code
+            }
+            layout {
+                sequence: 110
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column SCAN_TS (
+            type: plainText
+            heading {
+                heading: Scan Time
+            }
+            layout {
+                sequence: 120
+            }
+            source {
+                dataType: STRING
+            }
+        )
+    )
+
+)

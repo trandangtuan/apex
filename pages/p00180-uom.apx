@@ -1,0 +1,201 @@
+page 180 (
+    name: UOM
+    alias: UOM
+    title: Units of Measure
+    pageGroup: @master-data
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText: Browse and maintain the unit of measure (UOM) master list (FR-01). Item.uom selects from this table.
+    }
+
+    region breadcrumb (
+        name: UOM
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: REGION_POSITION_01
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region UOM_GRID (
+        name: Units of Measure
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select
+                    uom_code,
+                    uom_name,
+                    is_active
+                from uom
+                order by uom_code
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: BODY
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
+        pagination {
+            type: page
+            showTotalCount: true
+        }
+        messages {
+            whenNoDataFound: No units of measure found.
+        }
+        toolbar {
+            controls: [
+                searchCol
+                searchField
+                actionsMenu
+                resetButton
+                saveButton
+            ]
+        }
+        download {
+            formats: [
+                csv
+                excel
+            ]
+        }
+
+        savedReport PRIMARY (
+            visibility: primary
+            view {
+                default: grid
+            }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    sequence: 0
+                }
+            )
+            displayColumn (
+                column: @UOM_CODE
+                layout {
+                    sequence: 1
+                }
+            )
+            displayColumn (
+                column: @UOM_NAME
+                layout {
+                    sequence: 2
+                }
+            )
+            displayColumn (
+                column: @IS_ACTIVE
+                layout {
+                    sequence: 3
+                }
+            )
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 5
+            }
+        )
+
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+        )
+
+        column UOM_CODE (
+            type: textField
+            heading {
+                heading: UOM Code
+            }
+            layout {
+                sequence: 20
+            }
+            validation {
+                maxLength: 10
+            }
+            source {
+                databaseColumn: UOM_CODE
+                dataType: varchar2
+                primaryKey: true
+            }
+        )
+
+        column UOM_NAME (
+            type: textField
+            heading {
+                heading: Name
+            }
+            layout {
+                sequence: 30
+            }
+            validation {
+                maxLength: 60
+            }
+            source {
+                databaseColumn: UOM_NAME
+                dataType: varchar2
+            }
+        )
+
+        column IS_ACTIVE (
+            type: checkbox
+            heading {
+                heading: Active
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                databaseColumn: IS_ACTIVE
+                dataType: varchar2
+            }
+        )
+    )
+
+    process UOM_GRID_ARP (
+        name: UOM - Save Data
+        type: interactiveGridAutoRowProcessing
+        editableRegion: @UOM_GRID
+        execution {
+            sequence: 10
+        }
+    )
+
+)

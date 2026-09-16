@@ -1,0 +1,452 @@
+page 151 (
+    name: Quality Hold Form
+    alias: QUALITY-HOLD-FORM
+    title: Quality Hold Form
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @/drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        chained: false
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText: Place or update one stock hold (FR-07). Item, Lot and Location are selected from master lists; leave Lot/Location blank to apply the hold to every lot/location of that item. No Delete button here on purpose -- use PKG_QUALITY.release_hold to release a hold so RELEASED_BY/RELEASE_DATE stay accurate.
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: REGION_POSITION_03
+        }
+        appearance {
+            template: @/buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region form (
+        name: Quality Hold Form
+        type: form
+        source {
+            location: localDatabase
+            tableName: QUALITY_HOLD
+        }
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @/blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        edit {
+            enabled: true
+        }
+    )
+
+    pageItem P151_HOLD_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @form
+            slot: regionBody
+        }
+        source {
+            formRegion: @form
+            column: HOLD_ID
+            dataType: number
+            queryOnly: true
+            primaryKey: true
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P151_SUCCESS_MESSAGE (
+        type: hidden
+        layout {
+            sequence: 11
+            region: @form
+            slot: regionBody
+        }
+    )
+
+    pageItem P151_ITEM_ID (
+        type: selectList
+        label {
+            label: Item
+        }
+        lov {
+            type: sharedComponent
+            lov: @item-active
+        }
+        layout {
+            sequence: 20
+            region: @form
+            slot: regionBody
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        source {
+            formRegion: @form
+            column: ITEM_ID
+            dataType: number
+        }
+        help {
+            helpText: Item to hold, selected from the active Item master list.
+        }
+    )
+
+    pageItem P151_LOT_ID (
+        type: selectList
+        label {
+            label: Lot
+        }
+        lov {
+            type: sharedComponent
+            lov: @lot-any
+            displayNullValue: true
+        }
+        layout {
+            sequence: 30
+            region: @form
+            slot: regionBody
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        source {
+            formRegion: @form
+            column: LOT_ID
+            dataType: number
+        }
+        help {
+            helpText: Leave blank to hold every lot of this item.
+        }
+    )
+
+    pageItem P151_LOCATION_ID (
+        type: selectList
+        label {
+            label: Location
+        }
+        lov {
+            type: sharedComponent
+            lov: @location-active
+            displayNullValue: true
+        }
+        layout {
+            sequence: 40
+            region: @form
+            slot: regionBody
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        source {
+            formRegion: @form
+            column: LOCATION_ID
+            dataType: number
+        }
+        help {
+            helpText: Leave blank to hold this item/lot in every location.
+        }
+    )
+
+    pageItem P151_REASON (
+        type: textField
+        label {
+            label: Reason
+        }
+        layout {
+            sequence: 50
+            region: @form
+            slot: regionBody
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 200
+            valueRequired: true
+        }
+        source {
+            formRegion: @form
+            column: REASON
+            dataType: varchar2
+        }
+        help {
+            helpText: Why this stock is being held.
+        }
+    )
+
+    pageItem P151_HOLD_DATE (
+        type: datePicker
+        label {
+            label: Hold Date
+        }
+        layout {
+            sequence: 60
+            region: @form
+            slot: regionBody
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        source {
+            formRegion: @form
+            column: HOLD_DATE
+            dataType: date
+        }
+        help {
+            helpText: Date the hold was placed.
+        }
+    )
+
+    pageItem P151_RELEASED_BY (
+        type: textField
+        label {
+            label: Released By
+        }
+        layout {
+            sequence: 70
+            region: @form
+            slot: regionBody
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 60
+        }
+        source {
+            formRegion: @form
+            column: RELEASED_BY
+            dataType: varchar2
+        }
+        help {
+            helpText: Normally set by PKG_QUALITY.release_hold; edit here only to correct a mistake.
+        }
+    )
+
+    pageItem P151_RELEASE_DATE (
+        type: datePicker
+        label {
+            label: Release Date
+        }
+        layout {
+            sequence: 80
+            region: @form
+            slot: regionBody
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        source {
+            formRegion: @form
+            column: RELEASE_DATE
+            dataType: date
+        }
+        help {
+            helpText: Normally set by PKG_QUALITY.release_hold; edit here only to correct a mistake.
+        }
+    )
+
+    pageItem P151_STATUS (
+        type: selectList
+        label {
+            label: Status
+        }
+        lov {
+            type: staticValues
+            staticValues: STATIC:Active;ACTIVE,Released;RELEASED
+        }
+        layout {
+            sequence: 90
+            region: @form
+            slot: regionBody
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        default {
+            type: static
+            staticValue: ACTIVE
+        }
+        validation {
+            valueRequired: true
+        }
+        source {
+            formRegion: @form
+            column: STATUS
+            dataType: varchar2
+        }
+        help {
+            helpText: Prefer PKG_QUALITY.release_hold to release a hold instead of changing this directly.
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Cancel
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: CLOSE
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Create
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: CREATE
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: insert
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P151_HOLD_ID
+        }
+    )
+
+    button apply-changes (
+        buttonName: APPLY-CHANGES
+        label: Apply Changes
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: NEXT
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: update
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P151_HOLD_ID
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 50
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,APPLY-CHANGES
+        }
+    )
+
+    process initialize-form-form (
+        name: Initialize form Form
+        type: formInitialization
+        formRegion: @form
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+    )
+
+    process set-success-message-form (
+        name: Set Success Message
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P151_SUCCESS_MESSAGE :=
+                    case :REQUEST
+                        when 'CREATE' then 'Quality hold was created successfully.'
+                        when 'APPLY-CHANGES' then 'Quality hold was updated successfully.'
+                        else null
+                    end;
+                ```
+        }
+        execution {
+            sequence: 5
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,APPLY-CHANGES
+        }
+    )
+
+    process process-form-form (
+        name: Process form Form
+        type: formAutoRowProcessing
+        formRegion: @form
+        execution {
+            sequence: 10
+        }
+        successMessage {
+            successMessage: &P151_SUCCESS_MESSAGE.
+        }
+    )
+
+)

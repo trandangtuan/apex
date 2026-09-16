@@ -1,0 +1,285 @@
+page 200 (
+    name: Suppliers
+    alias: SUPPLIERS
+    title: Suppliers
+    pageGroup: @master-data
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText: Browse and maintain suppliers (FR-01). Referenced by Items (default supplier), Lots and Inbound Receipts.
+    }
+
+    region breadcrumb (
+        name: Suppliers
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: REGION_POSITION_01
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region SUPPLIERS_GRID (
+        name: Suppliers
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select
+                    supplier_id,
+                    supplier_code,
+                    supplier_name,
+                    contact_name,
+                    contact_email,
+                    contact_phone,
+                    is_active
+                from supplier
+                order by supplier_code
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: BODY
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
+        pagination {
+            type: page
+            showTotalCount: true
+        }
+        messages {
+            whenNoDataFound: No suppliers found.
+        }
+        toolbar {
+            controls: [
+                searchCol
+                searchField
+                actionsMenu
+                resetButton
+                saveButton
+            ]
+        }
+        download {
+            formats: [
+                csv
+                excel
+            ]
+        }
+
+        savedReport PRIMARY (
+            visibility: primary
+            view {
+                default: grid
+            }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    sequence: 0
+                }
+            )
+            displayColumn (
+                column: @SUPPLIER_CODE
+                layout {
+                    sequence: 1
+                }
+            )
+            displayColumn (
+                column: @SUPPLIER_NAME
+                layout {
+                    sequence: 2
+                }
+            )
+            displayColumn (
+                column: @CONTACT_NAME
+                layout {
+                    sequence: 3
+                }
+            )
+            displayColumn (
+                column: @CONTACT_EMAIL
+                layout {
+                    sequence: 4
+                }
+            )
+            displayColumn (
+                column: @CONTACT_PHONE
+                layout {
+                    sequence: 5
+                }
+            )
+            displayColumn (
+                column: @IS_ACTIVE
+                layout {
+                    sequence: 6
+                }
+            )
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 5
+            }
+        )
+
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+        )
+
+        column SUPPLIER_ID (
+            type: hidden
+            layout {
+                sequence: 15
+            }
+            source {
+                databaseColumn: SUPPLIER_ID
+                dataType: number
+                primaryKey: true
+            }
+        )
+
+        column SUPPLIER_CODE (
+            type: textField
+            heading {
+                heading: Supplier Code
+            }
+            layout {
+                sequence: 20
+            }
+            validation {
+                maxLength: 20
+            }
+            source {
+                databaseColumn: SUPPLIER_CODE
+                dataType: varchar2
+            }
+        )
+
+        column SUPPLIER_NAME (
+            type: textField
+            heading {
+                heading: Supplier Name
+            }
+            layout {
+                sequence: 30
+            }
+            validation {
+                maxLength: 150
+            }
+            source {
+                databaseColumn: SUPPLIER_NAME
+                dataType: varchar2
+            }
+        )
+
+        column CONTACT_NAME (
+            type: textField
+            heading {
+                heading: Contact Name
+            }
+            layout {
+                sequence: 40
+            }
+            validation {
+                maxLength: 100
+            }
+            source {
+                databaseColumn: CONTACT_NAME
+                dataType: varchar2
+            }
+        )
+
+        column CONTACT_EMAIL (
+            type: textField
+            heading {
+                heading: Contact Email
+            }
+            layout {
+                sequence: 50
+            }
+            validation {
+                maxLength: 120
+            }
+            source {
+                databaseColumn: CONTACT_EMAIL
+                dataType: varchar2
+            }
+        )
+
+        column CONTACT_PHONE (
+            type: textField
+            heading {
+                heading: Contact Phone
+            }
+            layout {
+                sequence: 60
+            }
+            validation {
+                maxLength: 30
+            }
+            source {
+                databaseColumn: CONTACT_PHONE
+                dataType: varchar2
+            }
+        )
+
+        column IS_ACTIVE (
+            type: checkbox
+            heading {
+                heading: Active
+            }
+            layout {
+                sequence: 70
+            }
+            source {
+                databaseColumn: IS_ACTIVE
+                dataType: varchar2
+            }
+        )
+    )
+
+    process SUPPLIERS_GRID_ARP (
+        name: Suppliers - Save Data
+        type: interactiveGridAutoRowProcessing
+        editableRegion: @SUPPLIERS_GRID
+        execution {
+            sequence: 10
+        }
+    )
+
+)

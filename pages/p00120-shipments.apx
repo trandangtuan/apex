@@ -1,0 +1,191 @@
+page 120 (
+    name: Shipments
+    alias: SHIPMENTS
+    title: Shipments
+    pageGroup: @outbound
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText: Read-only shipment/manifest records (FR-04), created by PKG_SHIPMENT.ship_order once an order is fully packed.
+    }
+
+    region breadcrumb (
+        name: Shipments
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: REGION_POSITION_01
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region SHIPMENTS_REPORT (
+        name: Shipments
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select
+                    s.shipment_id,
+                    o.order_number,
+                    c.customer_name,
+                    s.carrier,
+                    s.tracking_number,
+                    s.ship_date,
+                    s.status,
+                    w.warehouse_code
+                from shipment s
+                join outbound_order o on o.order_id = s.order_id
+                join customer c on c.customer_id = o.customer_id
+                left join warehouse w on w.warehouse_id = s.ship_from_warehouse_id
+                order by s.shipment_id desc
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: BODY
+        }
+        appearance {
+            template: @/interactive-report
+            templateOptions: #DEFAULT#
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        messages {
+            whenNoDataFound: No shipments found.
+        }
+        download {
+            formats: [
+                csv
+                excel
+            ]
+        }
+
+        column SHIPMENT_ID (
+            type: hidden
+            heading {
+                heading: Shipment Id
+            }
+            layout {
+                sequence: 10
+            }
+            source {
+                dataType: NUMBER
+            }
+        )
+
+        column ORDER_NUMBER (
+            type: plainText
+            heading {
+                heading: Order Number
+            }
+            layout {
+                sequence: 20
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column CUSTOMER_NAME (
+            type: plainText
+            heading {
+                heading: Customer
+            }
+            layout {
+                sequence: 30
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column CARRIER (
+            type: plainText
+            heading {
+                heading: Carrier
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column TRACKING_NUMBER (
+            type: plainText
+            heading {
+                heading: Tracking Number
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column SHIP_DATE (
+            type: plainText
+            heading {
+                heading: Ship Date
+            }
+            layout {
+                sequence: 60
+            }
+            appearance {
+                formatMask: DD-MON-YYYY
+            }
+            source {
+                dataType: DATE
+            }
+        )
+
+        column STATUS (
+            type: plainText
+            heading {
+                heading: Status
+            }
+            layout {
+                sequence: 70
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column WAREHOUSE_CODE (
+            type: plainText
+            heading {
+                heading: Ship From Warehouse
+            }
+            layout {
+                sequence: 80
+            }
+            source {
+                dataType: STRING
+            }
+        )
+    )
+
+)

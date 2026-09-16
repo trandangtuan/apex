@@ -1,0 +1,273 @@
+page 40 (
+    name: Inventory Balance
+    alias: INVENTORY-BALANCE
+    title: Inventory Balance
+    pageGroup: @inventory
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText: Real-time on-hand inventory by item, location and lot (FR-01, FR-06). Read-only view sourced from V_INVENTORY_CURRENT; balances are maintained by inbound/outbound processes, not by manual edit here.
+    }
+
+    region breadcrumb (
+        name: Inventory Balance
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: REGION_POSITION_01
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region INVENTORY_BALANCE_REPORT (
+        name: Inventory Balance
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select
+                    inventory_balance_id,
+                    item_code,
+                    item_name,
+                    device_category,
+                    warehouse_code,
+                    location_code,
+                    location_type,
+                    lot_number,
+                    qc_status,
+                    qty_on_hand,
+                    qty_allocated,
+                    qty_available,
+                    last_counted_date
+                from v_inventory_current
+                order by item_code, location_code
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: BODY
+        }
+        appearance {
+            template: @/interactive-report
+            templateOptions: #DEFAULT#
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        messages {
+            whenNoDataFound: No inventory balances found.
+        }
+        download {
+            formats: [
+                csv
+                excel
+            ]
+        }
+
+        column INVENTORY_BALANCE_ID (
+            type: hidden
+            heading {
+                heading: Balance Id
+            }
+            layout {
+                sequence: 10
+            }
+            source {
+                dataType: NUMBER
+            }
+        )
+
+        column ITEM_CODE (
+            type: plainText
+            heading {
+                heading: Item Code
+            }
+            layout {
+                sequence: 20
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column ITEM_NAME (
+            type: plainText
+            heading {
+                heading: Item Name
+            }
+            layout {
+                sequence: 30
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column DEVICE_CATEGORY (
+            type: plainText
+            heading {
+                heading: Device Category
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column WAREHOUSE_CODE (
+            type: plainText
+            heading {
+                heading: Warehouse
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column LOCATION_CODE (
+            type: plainText
+            heading {
+                heading: Location
+            }
+            layout {
+                sequence: 60
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column LOCATION_TYPE (
+            type: plainText
+            heading {
+                heading: Location Type
+            }
+            layout {
+                sequence: 70
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column LOT_NUMBER (
+            type: plainText
+            heading {
+                heading: Lot Number
+            }
+            layout {
+                sequence: 80
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column QC_STATUS (
+            type: plainText
+            heading {
+                heading: QC Status
+            }
+            layout {
+                sequence: 90
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column QTY_ON_HAND (
+            type: plainText
+            heading {
+                heading: On Hand
+                alignment: end
+            }
+            layout {
+                sequence: 100
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G990D00
+            }
+            source {
+                dataType: NUMBER
+            }
+        )
+
+        column QTY_ALLOCATED (
+            type: plainText
+            heading {
+                heading: Allocated
+                alignment: end
+            }
+            layout {
+                sequence: 110
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G990D00
+            }
+            source {
+                dataType: NUMBER
+            }
+        )
+
+        column QTY_AVAILABLE (
+            type: plainText
+            heading {
+                heading: Available
+                alignment: end
+            }
+            layout {
+                sequence: 120
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G990D00
+            }
+            source {
+                dataType: NUMBER
+            }
+        )
+
+        column LAST_COUNTED_DATE (
+            type: plainText
+            heading {
+                heading: Last Counted
+            }
+            layout {
+                sequence: 130
+            }
+            appearance {
+                formatMask: DD-MON-YYYY
+            }
+            source {
+                dataType: DATE
+            }
+        )
+    )
+
+)

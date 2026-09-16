@@ -1,0 +1,282 @@
+page 60 (
+    name: Inbound Receipts
+    alias: INBOUND-RECEIPTS
+    title: Inbound Receipts
+    pageGroup: @inbound
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText: Inbound receipt headers (FR-02). Select a receipt and click Edit to open it, or use New Receipt to create one. Supplier and Warehouse are selected from their active master lists. Business logic (receive, putaway, complete) runs through PKG_INBOUND, not through direct edits to STATUS.
+    }
+
+    region breadcrumb (
+        name: Inbound Receipts
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: REGION_POSITION_01
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region actions (
+        name: Actions
+        type: staticContent
+        layout {
+            sequence: 15
+            slot: BODY
+        }
+        appearance {
+            template: @/blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P60_EDIT_SELECT (
+        type: selectList
+        label {
+            label: Select Receipt to Edit
+        }
+        lov {
+            type: sharedComponent
+            lov: @inbound-receipt-any
+        }
+        layout {
+            sequence: 10
+            region: @actions
+            slot: regionBody
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        help {
+            helpText: Pick a receipt, then click Edit to open it.
+        }
+    )
+
+    button edit-receipt (
+        buttonName: EDIT_RECEIPT
+        label: Edit
+        layout {
+            sequence: 20
+            region: @actions
+            slot: regionBody
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 61
+                items: {
+                    P61_RECEIPT_ID: &P60_EDIT_SELECT.
+                }
+                clearCache: 61
+            }
+        }
+    )
+
+    button create-receipt (
+        buttonName: CREATE_RECEIPT
+        label: New Receipt
+        layout {
+            sequence: 30
+            region: @actions
+            slot: regionBody
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 61
+                clearCache: 61
+            }
+        }
+    )
+
+    region INBOUND_RECEIPTS_REPORT (
+        name: Inbound Receipts
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select
+                    r.receipt_id,
+                    s.supplier_code,
+                    r.po_reference,
+                    w.warehouse_code,
+                    r.expected_date,
+                    r.status,
+                    r.received_by
+                from inbound_receipt r
+                left join supplier s on s.supplier_id = r.supplier_id
+                join warehouse w on w.warehouse_id = r.warehouse_id
+                order by r.receipt_id desc
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: BODY
+        }
+        appearance {
+            template: @/interactive-report
+            templateOptions: #DEFAULT#
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        messages {
+            whenNoDataFound: No inbound receipts found.
+        }
+        download {
+            formats: [
+                csv
+                excel
+            ]
+        }
+
+        column RECEIPT_ID (
+            type: plainText
+            heading {
+                heading: Receipt Id
+            }
+            layout {
+                sequence: 10
+            }
+            source {
+                dataType: NUMBER
+            }
+        )
+
+        column SUPPLIER_CODE (
+            type: plainText
+            heading {
+                heading: Supplier
+            }
+            layout {
+                sequence: 20
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column PO_REFERENCE (
+            type: plainText
+            heading {
+                heading: PO Reference
+            }
+            layout {
+                sequence: 30
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column WAREHOUSE_CODE (
+            type: plainText
+            heading {
+                heading: Warehouse
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column EXPECTED_DATE (
+            type: plainText
+            heading {
+                heading: Expected Date
+            }
+            layout {
+                sequence: 50
+            }
+            appearance {
+                formatMask: DD-MON-YYYY
+            }
+            source {
+                dataType: DATE
+            }
+        )
+
+        column STATUS (
+            type: plainText
+            heading {
+                heading: Status
+            }
+            layout {
+                sequence: 60
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column RECEIVED_BY (
+            type: plainText
+            heading {
+                heading: Received By
+            }
+            layout {
+                sequence: 70
+            }
+            source {
+                dataType: STRING
+            }
+        )
+    )
+
+    dynamicAction refresh-on-edit (
+        name: Refresh on Edit
+        execution {
+            sequence: 10
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @INBOUND_RECEIPTS_REPORT
+        }
+
+        action refresh-inbound-receipts-report (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @INBOUND_RECEIPTS_REPORT
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+    )
+
+)

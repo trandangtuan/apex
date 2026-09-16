@@ -1,0 +1,306 @@
+page 20 (
+    name: Locations
+    alias: LOCATIONS
+    title: Locations
+    pageGroup: @master-data
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText: Browse warehouse storage locations / bins (FR-01, FR-05). Select a location and click Edit to open it, or use New Location to create one. Warehouse is selected from the active Warehouse master list.
+    }
+
+    region breadcrumb (
+        name: Locations
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: REGION_POSITION_01
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region actions (
+        name: Actions
+        type: staticContent
+        layout {
+            sequence: 15
+            slot: BODY
+        }
+        appearance {
+            template: @/blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P20_EDIT_SELECT (
+        type: selectList
+        label {
+            label: Select Location to Edit
+        }
+        lov {
+            type: sharedComponent
+            lov: @location-active
+        }
+        layout {
+            sequence: 10
+            region: @actions
+            slot: regionBody
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        help {
+            helpText: Pick an active location, then click Edit to open it.
+        }
+    )
+
+    button edit-location (
+        buttonName: EDIT_LOCATION
+        label: Edit
+        layout {
+            sequence: 20
+            region: @actions
+            slot: regionBody
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 21
+                items: {
+                    P21_LOCATION_ID: &P20_EDIT_SELECT.
+                }
+                clearCache: 21
+            }
+        }
+    )
+
+    button create-location (
+        buttonName: CREATE_LOCATION
+        label: New Location
+        layout {
+            sequence: 30
+            region: @actions
+            slot: regionBody
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 21
+                clearCache: 21
+            }
+        }
+    )
+
+    region LOCATIONS_REPORT (
+        name: Locations
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select
+                    l.location_id,
+                    l.location_code,
+                    w.warehouse_code,
+                    l.zone,
+                    l.aisle,
+                    l.rack,
+                    l.shelf,
+                    l.location_type,
+                    l.is_active
+                from location l
+                join warehouse w on w.warehouse_id = l.warehouse_id
+                order by l.location_code
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: BODY
+        }
+        appearance {
+            template: @/interactive-report
+            templateOptions: #DEFAULT#
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        messages {
+            whenNoDataFound: No locations found.
+        }
+        download {
+            formats: [
+                csv
+                excel
+            ]
+        }
+
+        column LOCATION_ID (
+            type: hidden
+            heading {
+                heading: Location Id
+            }
+            layout {
+                sequence: 10
+            }
+            source {
+                dataType: NUMBER
+            }
+        )
+
+        column LOCATION_CODE (
+            type: plainText
+            heading {
+                heading: Location Code
+            }
+            layout {
+                sequence: 20
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column WAREHOUSE_CODE (
+            type: plainText
+            heading {
+                heading: Warehouse
+            }
+            layout {
+                sequence: 30
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column ZONE (
+            type: plainText
+            heading {
+                heading: Zone
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column AISLE (
+            type: plainText
+            heading {
+                heading: Aisle
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column RACK (
+            type: plainText
+            heading {
+                heading: Rack
+            }
+            layout {
+                sequence: 60
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column SHELF (
+            type: plainText
+            heading {
+                heading: Shelf
+            }
+            layout {
+                sequence: 70
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column LOCATION_TYPE (
+            type: plainText
+            heading {
+                heading: Location Type
+            }
+            layout {
+                sequence: 80
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column IS_ACTIVE (
+            type: plainText
+            heading {
+                heading: Active
+            }
+            layout {
+                sequence: 90
+            }
+            source {
+                dataType: STRING
+            }
+        )
+    )
+
+    dynamicAction refresh-on-edit (
+        name: Refresh on Edit
+        execution {
+            sequence: 10
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @LOCATIONS_REPORT
+        }
+
+        action refresh-locations-report (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @LOCATIONS_REPORT
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+    )
+
+)

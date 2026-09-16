@@ -1,0 +1,32 @@
+pageGroup administration (
+    name: Administration
+)
+
+pageGroup master-data (
+    name: Master Data
+)
+
+pageGroup inventory (
+    name: Inventory
+)
+
+pageGroup inbound (
+    name: Inbound
+)
+
+pageGroup outbound (
+    name: Outbound
+)
+
+pageGroup quality (
+    name: Quality
+)
+
+pageGroup reporting (
+    name: Reporting
+)
+
+pageGroup integration (
+    name: Integration
+)
+

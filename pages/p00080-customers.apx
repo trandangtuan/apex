@@ -1,0 +1,237 @@
+page 80 (
+    name: Customers
+    alias: CUSTOMERS
+    title: Customers
+    pageGroup: @outbound
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText: Ship-to customers for outbound orders (FR-04).
+    }
+
+    region breadcrumb (
+        name: Customers
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: REGION_POSITION_01
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region CUSTOMERS_GRID (
+        name: Customers
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select
+                    customer_id,
+                    customer_code,
+                    customer_name,
+                    address,
+                    is_active
+                from customer
+                order by customer_code
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: BODY
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
+        pagination {
+            type: page
+            showTotalCount: true
+        }
+        messages {
+            whenNoDataFound: No customers found.
+        }
+        toolbar {
+            controls: [
+                searchCol
+                searchField
+                actionsMenu
+                resetButton
+                saveButton
+            ]
+        }
+        download {
+            formats: [
+                csv
+                excel
+            ]
+        }
+
+        savedReport PRIMARY (
+            visibility: primary
+            view {
+                default: grid
+            }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    sequence: 0
+                }
+            )
+            displayColumn (
+                column: @CUSTOMER_CODE
+                layout {
+                    sequence: 1
+                }
+            )
+            displayColumn (
+                column: @CUSTOMER_NAME
+                layout {
+                    sequence: 2
+                }
+            )
+            displayColumn (
+                column: @ADDRESS
+                layout {
+                    sequence: 3
+                }
+            )
+            displayColumn (
+                column: @IS_ACTIVE
+                layout {
+                    sequence: 4
+                }
+            )
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 5
+            }
+        )
+
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+        )
+
+        column CUSTOMER_ID (
+            type: hidden
+            layout {
+                sequence: 15
+            }
+            source {
+                databaseColumn: CUSTOMER_ID
+                dataType: number
+                primaryKey: true
+            }
+        )
+
+        column CUSTOMER_CODE (
+            type: textField
+            heading {
+                heading: Customer Code
+            }
+            layout {
+                sequence: 20
+            }
+            validation {
+                maxLength: 20
+            }
+            source {
+                databaseColumn: CUSTOMER_CODE
+                dataType: varchar2
+            }
+        )
+
+        column CUSTOMER_NAME (
+            type: textField
+            heading {
+                heading: Customer Name
+            }
+            layout {
+                sequence: 30
+            }
+            validation {
+                maxLength: 150
+            }
+            source {
+                databaseColumn: CUSTOMER_NAME
+                dataType: varchar2
+            }
+        )
+
+        column ADDRESS (
+            type: textField
+            heading {
+                heading: Address
+            }
+            layout {
+                sequence: 40
+            }
+            validation {
+                maxLength: 200
+            }
+            source {
+                databaseColumn: ADDRESS
+                dataType: varchar2
+            }
+        )
+
+        column IS_ACTIVE (
+            type: checkbox
+            heading {
+                heading: Active
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                databaseColumn: IS_ACTIVE
+                dataType: varchar2
+            }
+        )
+    )
+
+    process CUSTOMERS_GRID_ARP (
+        name: Customers - Save Data
+        type: interactiveGridAutoRowProcessing
+        editableRegion: @CUSTOMERS_GRID
+        execution {
+            sequence: 10
+        }
+    )
+
+)

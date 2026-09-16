@@ -1,0 +1,371 @@
+page 130 (
+    name: KPI Baseline
+    alias: KPI-BASELINE
+    title: KPI Baseline
+    pageGroup: @reporting
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText: Baseline and target for the 3 OIP KPIs (FR-10). Rows with IS_PLACEHOLDER = Y hold fake demo figures for development only -- edit BASELINE_VALUE, BASELINE_MEASURED_FROM/TO and set IS_PLACEHOLDER = N once a real pre-system measurement is available, otherwise the improvement cannot be proven to SIEA.
+    }
+
+    region breadcrumb (
+        name: KPI Baseline
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: REGION_POSITION_01
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region KPI_BASELINE_GRID (
+        name: KPI Baseline
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select
+                    kpi_id,
+                    kpi_code,
+                    kpi_name,
+                    unit,
+                    direction,
+                    baseline_value,
+                    baseline_measured_from,
+                    baseline_measured_to,
+                    target_value,
+                    is_placeholder,
+                    baseline_note
+                from kpi_baseline
+                order by kpi_code
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: BODY
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                update
+            ]
+        }
+        pagination {
+            type: page
+            showTotalCount: true
+        }
+        messages {
+            whenNoDataFound: No KPI baseline rows found.
+        }
+        toolbar {
+            controls: [
+                searchCol
+                searchField
+                actionsMenu
+                resetButton
+                saveButton
+            ]
+        }
+        download {
+            formats: [
+                csv
+                excel
+            ]
+        }
+
+        savedReport PRIMARY (
+            visibility: primary
+            view {
+                default: grid
+            }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    sequence: 0
+                }
+            )
+            displayColumn (
+                column: @KPI_CODE
+                layout {
+                    sequence: 1
+                }
+            )
+            displayColumn (
+                column: @KPI_NAME
+                layout {
+                    sequence: 2
+                }
+            )
+            displayColumn (
+                column: @UNIT
+                layout {
+                    sequence: 3
+                }
+            )
+            displayColumn (
+                column: @DIRECTION
+                layout {
+                    sequence: 4
+                }
+            )
+            displayColumn (
+                column: @BASELINE_VALUE
+                layout {
+                    sequence: 5
+                }
+            )
+            displayColumn (
+                column: @BASELINE_MEASURED_FROM
+                layout {
+                    sequence: 6
+                }
+            )
+            displayColumn (
+                column: @BASELINE_MEASURED_TO
+                layout {
+                    sequence: 7
+                }
+            )
+            displayColumn (
+                column: @TARGET_VALUE
+                layout {
+                    sequence: 8
+                }
+            )
+            displayColumn (
+                column: @IS_PLACEHOLDER
+                layout {
+                    sequence: 9
+                }
+            )
+            displayColumn (
+                column: @BASELINE_NOTE
+                layout {
+                    sequence: 10
+                }
+            )
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 5
+            }
+        )
+
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+        )
+
+        column KPI_ID (
+            type: hidden
+            layout {
+                sequence: 15
+            }
+            source {
+                databaseColumn: KPI_ID
+                dataType: number
+                primaryKey: true
+            }
+        )
+
+        column KPI_CODE (
+            type: textField
+            heading {
+                heading: KPI Code
+            }
+            layout {
+                sequence: 20
+            }
+            validation {
+                maxLength: 30
+            }
+            source {
+                databaseColumn: KPI_CODE
+                dataType: varchar2
+            }
+        )
+
+        column KPI_NAME (
+            type: textField
+            heading {
+                heading: KPI Name
+            }
+            layout {
+                sequence: 30
+            }
+            validation {
+                maxLength: 150
+            }
+            source {
+                databaseColumn: KPI_NAME
+                dataType: varchar2
+            }
+        )
+
+        column UNIT (
+            type: textField
+            heading {
+                heading: Unit
+            }
+            layout {
+                sequence: 40
+            }
+            validation {
+                maxLength: 30
+            }
+            source {
+                databaseColumn: UNIT
+                dataType: varchar2
+            }
+        )
+
+        column DIRECTION (
+            type: textField
+            heading {
+                heading: Direction
+            }
+            layout {
+                sequence: 50
+            }
+            validation {
+                maxLength: 10
+            }
+            source {
+                databaseColumn: DIRECTION
+                dataType: varchar2
+            }
+        )
+
+        column BASELINE_VALUE (
+            type: numberField
+            heading {
+                heading: Baseline Value
+                alignment: end
+            }
+            layout {
+                sequence: 60
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: BASELINE_VALUE
+                dataType: number
+            }
+        )
+
+        column BASELINE_MEASURED_FROM (
+            type: datePicker
+            heading {
+                heading: Measured From
+            }
+            layout {
+                sequence: 70
+            }
+            source {
+                databaseColumn: BASELINE_MEASURED_FROM
+                dataType: date
+            }
+        )
+
+        column BASELINE_MEASURED_TO (
+            type: datePicker
+            heading {
+                heading: Measured To
+            }
+            layout {
+                sequence: 80
+            }
+            source {
+                databaseColumn: BASELINE_MEASURED_TO
+                dataType: date
+            }
+        )
+
+        column TARGET_VALUE (
+            type: numberField
+            heading {
+                heading: Target Value
+                alignment: end
+            }
+            layout {
+                sequence: 90
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: TARGET_VALUE
+                dataType: number
+            }
+        )
+
+        column IS_PLACEHOLDER (
+            type: checkbox
+            heading {
+                heading: Placeholder
+            }
+            layout {
+                sequence: 100
+            }
+            source {
+                databaseColumn: IS_PLACEHOLDER
+                dataType: varchar2
+            }
+        )
+
+        column BASELINE_NOTE (
+            type: textField
+            heading {
+                heading: Note
+            }
+            layout {
+                sequence: 110
+            }
+            validation {
+                maxLength: 400
+            }
+            source {
+                databaseColumn: BASELINE_NOTE
+                dataType: varchar2
+            }
+        )
+    )
+
+    process KPI_BASELINE_GRID_ARP (
+        name: KPI Baseline - Save Data
+        type: interactiveGridAutoRowProcessing
+        editableRegion: @KPI_BASELINE_GRID
+        execution {
+            sequence: 10
+        }
+    )
+
+)

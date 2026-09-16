@@ -1,0 +1,320 @@
+page 140 (
+    name: Quality Inspections
+    alias: QUALITY-INSPECTIONS
+    title: Quality Inspections
+    pageGroup: @quality
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText: Quality inspection records (FR-07). Select a row and click Edit to open it, or use New Inspection to add one. Item and Lot are selected from master lists. Rows created here are audit entries only; to have a PASS/FAIL result automatically update the lot's QC status, call PKG_QUALITY.record_inspection instead (e.g. from a future inspection action page).
+    }
+
+    region breadcrumb (
+        name: Quality Inspections
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: REGION_POSITION_01
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region actions (
+        name: Actions
+        type: staticContent
+        layout {
+            sequence: 15
+            slot: BODY
+        }
+        appearance {
+            template: @/blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P140_EDIT_SELECT (
+        type: numberField
+        label {
+            label: Inspection Id to Edit
+        }
+        layout {
+            sequence: 10
+            region: @actions
+            slot: regionBody
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        help {
+            helpText: Enter the Inspection Id shown below, then click Edit to open it.
+        }
+    )
+
+    button edit-inspection (
+        buttonName: EDIT_INSPECTION
+        label: Edit
+        layout {
+            sequence: 20
+            region: @actions
+            slot: regionBody
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 141
+                items: {
+                    P141_INSPECTION_ID: &P140_EDIT_SELECT.
+                }
+                clearCache: 141
+            }
+        }
+    )
+
+    button create-inspection (
+        buttonName: CREATE_INSPECTION
+        label: New Inspection
+        layout {
+            sequence: 30
+            region: @actions
+            slot: regionBody
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 141
+                clearCache: 141
+            }
+        }
+    )
+
+    region QUALITY_INSPECTIONS_REPORT (
+        name: Quality Inspections
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select
+                    qi.inspection_id,
+                    qi.source_type,
+                    qi.source_id,
+                    i.item_code,
+                    lt.lot_number,
+                    qi.inspector,
+                    qi.inspection_date,
+                    qi.result,
+                    qi.defect_code,
+                    qi.notes
+                from quality_inspection qi
+                join item i on i.item_id = qi.item_id
+                left join lot lt on lt.lot_id = qi.lot_id
+                order by qi.inspection_id desc
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: BODY
+        }
+        appearance {
+            template: @/interactive-report
+            templateOptions: #DEFAULT#
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        messages {
+            whenNoDataFound: No quality inspections found.
+        }
+        download {
+            formats: [
+                csv
+                excel
+            ]
+        }
+
+        column INSPECTION_ID (
+            type: plainText
+            heading {
+                heading: Inspection Id
+            }
+            layout {
+                sequence: 10
+            }
+            source {
+                dataType: NUMBER
+            }
+        )
+
+        column SOURCE_TYPE (
+            type: plainText
+            heading {
+                heading: Source Type
+            }
+            layout {
+                sequence: 20
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column SOURCE_ID (
+            type: plainText
+            heading {
+                heading: Source Id
+            }
+            layout {
+                sequence: 30
+            }
+            source {
+                dataType: NUMBER
+            }
+        )
+
+        column ITEM_CODE (
+            type: plainText
+            heading {
+                heading: Item
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column LOT_NUMBER (
+            type: plainText
+            heading {
+                heading: Lot
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column INSPECTOR (
+            type: plainText
+            heading {
+                heading: Inspector
+            }
+            layout {
+                sequence: 60
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column INSPECTION_DATE (
+            type: plainText
+            heading {
+                heading: Inspection Date
+            }
+            layout {
+                sequence: 70
+            }
+            appearance {
+                formatMask: DD-MON-YYYY
+            }
+            source {
+                dataType: DATE
+            }
+        )
+
+        column RESULT (
+            type: plainText
+            heading {
+                heading: Result
+            }
+            layout {
+                sequence: 80
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column DEFECT_CODE (
+            type: plainText
+            heading {
+                heading: Defect Code
+            }
+            layout {
+                sequence: 90
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column NOTES (
+            type: plainText
+            heading {
+                heading: Notes
+            }
+            layout {
+                sequence: 100
+            }
+            source {
+                dataType: STRING
+            }
+        )
+    )
+
+    dynamicAction refresh-on-edit (
+        name: Refresh on Edit
+        execution {
+            sequence: 10
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @QUALITY_INSPECTIONS_REPORT
+        }
+
+        action refresh-quality-inspections-report (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @QUALITY_INSPECTIONS_REPORT
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+    )
+
+)

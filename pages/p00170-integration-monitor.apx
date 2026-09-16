@@ -1,0 +1,217 @@
+page 170 (
+    name: Integration Monitor
+    alias: INTEGRATION-MONITOR
+    title: Integration Monitor
+    pageGroup: @integration
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText: Read-only inbound/outbound integration log (FR-09), staged and applied by PKG_INTEGRATION_IN / PKG_INTEGRATION_OUT. ERROR rows show the failure reason so a payload can be corrected and re-submitted with the same IDEMPOTENCY_KEY.
+    }
+
+    region breadcrumb (
+        name: Integration Monitor
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: REGION_POSITION_01
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region INTEGRATION_LOG_REPORT (
+        name: Integration Log
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select
+                    il.log_id,
+                    il.direction,
+                    il.integration_type,
+                    il.status,
+                    il.idempotency_key,
+                    il.related_order_id,
+                    o.order_number,
+                    dbms_lob.substr(il.payload, 200, 1) as payload_preview,
+                    il.error_message,
+                    il.created_date
+                from integration_log il
+                left join outbound_order o on o.order_id = il.related_order_id
+                order by il.log_id desc
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: BODY
+        }
+        appearance {
+            template: @/interactive-report
+            templateOptions: #DEFAULT#
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        messages {
+            whenNoDataFound: No integration log entries found.
+        }
+        download {
+            formats: [
+                csv
+                excel
+            ]
+        }
+
+        column LOG_ID (
+            type: hidden
+            heading {
+                heading: Log Id
+            }
+            layout {
+                sequence: 10
+            }
+            source {
+                dataType: NUMBER
+            }
+        )
+
+        column DIRECTION (
+            type: plainText
+            heading {
+                heading: Direction
+            }
+            layout {
+                sequence: 20
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column INTEGRATION_TYPE (
+            type: plainText
+            heading {
+                heading: Type
+            }
+            layout {
+                sequence: 30
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column STATUS (
+            type: plainText
+            heading {
+                heading: Status
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column IDEMPOTENCY_KEY (
+            type: plainText
+            heading {
+                heading: Idempotency Key
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column RELATED_ORDER_ID (
+            type: hidden
+            heading {
+                heading: Related Order Id
+            }
+            layout {
+                sequence: 55
+            }
+            source {
+                dataType: NUMBER
+            }
+        )
+
+        column ORDER_NUMBER (
+            type: plainText
+            heading {
+                heading: Related Order
+            }
+            layout {
+                sequence: 60
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column PAYLOAD_PREVIEW (
+            type: plainText
+            heading {
+                heading: Payload Preview
+            }
+            layout {
+                sequence: 70
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column ERROR_MESSAGE (
+            type: plainText
+            heading {
+                heading: Error Message
+            }
+            layout {
+                sequence: 80
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column CREATED_DATE (
+            type: plainText
+            heading {
+                heading: Created
+            }
+            layout {
+                sequence: 90
+            }
+            appearance {
+                formatMask: DD-MON-YYYY HH24:MI:SS
+            }
+            source {
+                dataType: DATE
+            }
+        )
+    )
+
+)

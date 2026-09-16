@@ -1,0 +1,168 @@
+lov item-active (
+    name: ITEM_ACTIVE
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select item_code || ' - ' || item_name as display_value,
+                   item_id as return_value
+              from item
+             where is_active = 'Y'
+             order by item_code
+            ```
+    }
+    columnMapping {
+        return: return_value
+        display: display_value
+    }
+)
+
+lov uom-active (
+    name: UOM_ACTIVE
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select uom_name || ' (' || uom_code || ')' as display_value,
+                   uom_code as return_value
+              from uom
+             where is_active = 'Y'
+             order by uom_name
+            ```
+    }
+    columnMapping {
+        return: return_value
+        display: display_value
+    }
+)
+
+lov warehouse-active (
+    name: WAREHOUSE_ACTIVE
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select warehouse_code || ' - ' || warehouse_name as display_value,
+                   warehouse_id as return_value
+              from warehouse
+             where is_active = 'Y'
+             order by warehouse_code
+            ```
+    }
+    columnMapping {
+        return: return_value
+        display: display_value
+    }
+)
+
+lov supplier-active (
+    name: SUPPLIER_ACTIVE
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select supplier_code || ' - ' || supplier_name as display_value,
+                   supplier_id as return_value
+              from supplier
+             where is_active = 'Y'
+             order by supplier_code
+            ```
+    }
+    columnMapping {
+        return: return_value
+        display: display_value
+    }
+)
+
+lov customer-active (
+    name: CUSTOMER_ACTIVE
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select customer_code || ' - ' || customer_name as display_value,
+                   customer_id as return_value
+              from customer
+             where is_active = 'Y'
+             order by customer_code
+            ```
+    }
+    columnMapping {
+        return: return_value
+        display: display_value
+    }
+)
+
+lov location-active (
+    name: LOCATION_ACTIVE
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select location_code as display_value,
+                   location_id as return_value
+              from location
+             where is_active = 'Y'
+             order by location_code
+            ```
+    }
+    columnMapping {
+        return: return_value
+        display: display_value
+    }
+)
+
+lov lot-any (
+    name: LOT_ANY
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select lt.lot_number || ' (' || i.item_code || ')' as display_value,
+                   lt.lot_id as return_value
+              from lot lt
+              join item i on i.item_id = lt.item_id
+             order by lt.lot_number
+            ```
+    }
+    columnMapping {
+        return: return_value
+        display: display_value
+    }
+)
+
+lov inbound-receipt-any (
+    name: INBOUND_RECEIPT_ANY
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select 'Receipt #' || receipt_id || nvl2(po_reference, ' - ' || po_reference, '') as display_value,
+                   receipt_id as return_value
+              from inbound_receipt
+             order by receipt_id desc
+            ```
+    }
+    columnMapping {
+        return: return_value
+        display: display_value
+    }
+)
+
+lov outbound-order-any (
+    name: OUTBOUND_ORDER_ANY
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select order_number as display_value,
+                   order_id as return_value
+              from outbound_order
+             order by order_id desc
+            ```
+    }
+    columnMapping {
+        return: return_value
+        display: display_value
+    }
+)

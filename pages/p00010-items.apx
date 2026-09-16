@@ -1,0 +1,307 @@
+page 10 (
+    name: Items
+    alias: ITEMS
+    title: Items
+    pageGroup: @master-data
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText: Browse the item / SKU catalog (FR-01). Click the edit icon to open a row, or use New Item to create one. UOM is selected from the UOM master table; Active/Lot Tracked are toggled in the edit form.
+    }
+
+    region breadcrumb (
+        name: Items
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: REGION_POSITION_01
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region actions (
+        name: Actions
+        type: staticContent
+        layout {
+            sequence: 15
+            slot: BODY
+        }
+        appearance {
+            template: @/blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P10_EDIT_SELECT (
+        type: selectList
+        label {
+            label: Select Item to Edit
+        }
+        lov {
+            type: sharedComponent
+            lov: @item-active
+        }
+        layout {
+            sequence: 10
+            region: @actions
+            slot: regionBody
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        help {
+            helpText: Pick an active item, then click Edit to open it.
+        }
+    )
+
+    button edit-item (
+        buttonName: EDIT_ITEM
+        label: Edit
+        layout {
+            sequence: 20
+            region: @actions
+            slot: regionBody
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 11
+                items: {
+                    P11_ITEM_ID: &P10_EDIT_SELECT.
+                }
+                clearCache: 11
+            }
+        }
+    )
+
+    button create-item (
+        buttonName: CREATE_ITEM
+        label: New Item
+        layout {
+            sequence: 30
+            region: @actions
+            slot: regionBody
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 11
+                clearCache: 11
+            }
+        }
+    )
+
+    region ITEMS_REPORT (
+        name: Items
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select
+                    item_id,
+                    item_code,
+                    item_name,
+                    device_category,
+                    uom,
+                    barcode_value,
+                    is_lot_tracked,
+                    reorder_point,
+                    is_active
+                from item
+                order by item_code
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: BODY
+        }
+        appearance {
+            template: @/interactive-report
+            templateOptions: #DEFAULT#
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        messages {
+            whenNoDataFound: No items found.
+        }
+        download {
+            formats: [
+                csv
+                excel
+            ]
+        }
+
+        column ITEM_ID (
+            type: hidden
+            heading {
+                heading: Item Id
+            }
+            layout {
+                sequence: 10
+            }
+            source {
+                dataType: NUMBER
+            }
+        )
+
+        column ITEM_CODE (
+            type: plainText
+            heading {
+                heading: Item Code
+            }
+            layout {
+                sequence: 20
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column ITEM_NAME (
+            type: plainText
+            heading {
+                heading: Item Name
+            }
+            layout {
+                sequence: 30
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column DEVICE_CATEGORY (
+            type: plainText
+            heading {
+                heading: Device Category
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column UOM (
+            type: plainText
+            heading {
+                heading: UOM
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column BARCODE_VALUE (
+            type: plainText
+            heading {
+                heading: Barcode
+            }
+            layout {
+                sequence: 60
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column IS_LOT_TRACKED (
+            type: plainText
+            heading {
+                heading: Lot Tracked
+            }
+            layout {
+                sequence: 70
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column REORDER_POINT (
+            type: plainText
+            heading {
+                heading: Reorder Point
+                alignment: end
+            }
+            layout {
+                sequence: 80
+                columnAlignment: end
+            }
+            source {
+                dataType: NUMBER
+            }
+        )
+
+        column IS_ACTIVE (
+            type: plainText
+            heading {
+                heading: Active
+            }
+            layout {
+                sequence: 90
+            }
+            source {
+                dataType: STRING
+            }
+        )
+    )
+
+    dynamicAction refresh-on-edit (
+        name: Refresh on Edit
+        execution {
+            sequence: 10
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @ITEMS_REPORT
+        }
+
+        action refresh-items-report (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @ITEMS_REPORT
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+    )
+
+)

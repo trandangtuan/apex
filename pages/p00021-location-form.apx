@@ -1,0 +1,484 @@
+page 21 (
+    name: Location Form
+    alias: LOCATION-FORM
+    title: Location Form
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @/drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        chained: false
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText: Create or update one warehouse location / bin (FR-01). Warehouse is selected from the active Warehouse master list.
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: REGION_POSITION_03
+        }
+        appearance {
+            template: @/buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region form (
+        name: Location Form
+        type: form
+        source {
+            location: localDatabase
+            tableName: LOCATION
+        }
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @/blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        edit {
+            enabled: true
+        }
+    )
+
+    pageItem P21_LOCATION_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @form
+            slot: regionBody
+        }
+        source {
+            formRegion: @form
+            column: LOCATION_ID
+            dataType: number
+            queryOnly: true
+            primaryKey: true
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P21_SUCCESS_MESSAGE (
+        type: hidden
+        layout {
+            sequence: 11
+            region: @form
+            slot: regionBody
+        }
+    )
+
+    pageItem P21_LOCATION_CODE (
+        type: textField
+        label {
+            label: Location Code
+        }
+        layout {
+            sequence: 20
+            region: @form
+            slot: regionBody
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 30
+            valueRequired: true
+        }
+        source {
+            formRegion: @form
+            column: LOCATION_CODE
+            dataType: varchar2
+        }
+        help {
+            helpText: Unique bin/location code.
+        }
+    )
+
+    pageItem P21_WAREHOUSE_ID (
+        type: selectList
+        label {
+            label: Warehouse
+        }
+        lov {
+            type: sharedComponent
+            lov: @warehouse-active
+        }
+        layout {
+            sequence: 30
+            region: @form
+            slot: regionBody
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        source {
+            formRegion: @form
+            column: WAREHOUSE_ID
+            dataType: number
+        }
+        help {
+            helpText: Warehouse this location belongs to, selected from the active Warehouse master list.
+        }
+    )
+
+    pageItem P21_ZONE (
+        type: textField
+        label {
+            label: Zone
+        }
+        layout {
+            sequence: 40
+            region: @form
+            slot: regionBody
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 20
+        }
+        source {
+            formRegion: @form
+            column: ZONE
+            dataType: varchar2
+        }
+        help {
+            helpText: Optional zone code within the warehouse.
+        }
+    )
+
+    pageItem P21_AISLE (
+        type: textField
+        label {
+            label: Aisle
+        }
+        layout {
+            sequence: 50
+            region: @form
+            slot: regionBody
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 10
+        }
+        source {
+            formRegion: @form
+            column: AISLE
+            dataType: varchar2
+        }
+        help {
+            helpText: Optional aisle code.
+        }
+    )
+
+    pageItem P21_RACK (
+        type: textField
+        label {
+            label: Rack
+        }
+        layout {
+            sequence: 60
+            region: @form
+            slot: regionBody
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 10
+        }
+        source {
+            formRegion: @form
+            column: RACK
+            dataType: varchar2
+        }
+        help {
+            helpText: Optional rack code.
+        }
+    )
+
+    pageItem P21_SHELF (
+        type: textField
+        label {
+            label: Shelf
+        }
+        layout {
+            sequence: 70
+            region: @form
+            slot: regionBody
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 10
+        }
+        source {
+            formRegion: @form
+            column: SHELF
+            dataType: varchar2
+        }
+        help {
+            helpText: Optional shelf code.
+        }
+    )
+
+    pageItem P21_LOCATION_TYPE (
+        type: selectList
+        label {
+            label: Location Type
+        }
+        lov {
+            type: staticValues
+            staticValues: STATIC:Receiving;RECEIVING,Pick Face;PICK_FACE,Bulk;BULK,Quarantine;QUARANTINE,Staging;STAGING,Shipping;SHIPPING
+        }
+        layout {
+            sequence: 80
+            region: @form
+            slot: regionBody
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        source {
+            formRegion: @form
+            column: LOCATION_TYPE
+            dataType: varchar2
+        }
+        help {
+            helpText: Functional role of this location in the pick/putaway flow.
+        }
+    )
+
+    pageItem P21_IS_ACTIVE (
+        type: selectList
+        label {
+            label: Active
+        }
+        lov {
+            type: staticValues
+            staticValues: STATIC:Yes;Y,No;N
+        }
+        layout {
+            sequence: 90
+            region: @form
+            slot: regionBody
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        default {
+            type: static
+            staticValue: Y
+        }
+        source {
+            formRegion: @form
+            column: IS_ACTIVE
+            dataType: varchar2
+        }
+        help {
+            helpText: Set to No to retire this location without deleting its history.
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Cancel
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: CLOSE
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Create
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: CREATE
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: insert
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P21_LOCATION_ID
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Delete
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: DELETE
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: delete
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P21_LOCATION_ID
+        }
+    )
+
+    button apply-changes (
+        buttonName: APPLY-CHANGES
+        label: Apply Changes
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: NEXT
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: update
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P21_LOCATION_ID
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 50
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,APPLY-CHANGES,DELETE
+        }
+    )
+
+    process initialize-form-form (
+        name: Initialize form Form
+        type: formInitialization
+        formRegion: @form
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+    )
+
+    process set-success-message-form (
+        name: Set Success Message
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P21_SUCCESS_MESSAGE :=
+                    case :REQUEST
+                        when 'CREATE' then 'Location was created successfully.'
+                        when 'APPLY-CHANGES' then 'Location was updated successfully.'
+                        when 'DELETE' then 'Location was deleted successfully.'
+                        else null
+                    end;
+                ```
+        }
+        execution {
+            sequence: 5
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,APPLY-CHANGES,DELETE
+        }
+    )
+
+    process process-form-form (
+        name: Process form Form
+        type: formAutoRowProcessing
+        formRegion: @form
+        execution {
+            sequence: 10
+        }
+        successMessage {
+            successMessage: &P21_SUCCESS_MESSAGE.
+        }
+    )
+
+)
