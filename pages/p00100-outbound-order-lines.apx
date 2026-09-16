@@ -12,7 +12,7 @@ page 100 (
         formAutoComplete: false
     }
     help {
-        helpText: Outbound order lines (FR-04). Select a line and click Edit to open it, or use New Line to add one. Order and Item are selected from master lists. QTY_ALLOCATED/QTY_PICKED/QTY_SHIPPED/STATUS are normally maintained by PKG_OUTBOUND.allocate_line and PKG_PICKING.confirm_pick, not by direct edit.
+        helpText: Outbound order lines (FR-04). Order and Item are selected from active master lists. QTY_ALLOCATED/QTY_PICKED/QTY_SHIPPED/STATUS are maintained by PKG_OUTBOUND.allocate_line and PKG_PICKING.confirm_pick, not by direct edit.
     }
 
     region breadcrumb (
@@ -35,105 +35,25 @@ page 100 (
         }
     )
 
-    region actions (
-        name: Actions
-        type: staticContent
-        layout {
-            sequence: 15
-            slot: BODY
-        }
-        appearance {
-            template: @/blank-with-attributes
-            templateOptions: #DEFAULT#
-        }
-    )
-
-    pageItem P100_EDIT_SELECT (
-        type: numberField
-        label {
-            label: Line Id to Edit
-        }
-        layout {
-            sequence: 10
-            region: @actions
-            slot: regionBody
-        }
-        appearance {
-            template: @/optional-floating
-            templateOptions: #DEFAULT#
-        }
-        help {
-            helpText: Enter the Line Id shown below, then click Edit to open it.
-        }
-    )
-
-    button edit-line (
-        buttonName: EDIT_LINE
-        label: Edit
-        layout {
-            sequence: 20
-            region: @actions
-            slot: regionBody
-        }
-        appearance {
-            buttonTemplate: @/text
-            templateOptions: #DEFAULT#
-        }
-        behavior {
-            action: redirectThisApp
-            target: {
-                page: 101
-                items: {
-                    P101_LINE_ID: &P100_EDIT_SELECT.
-                }
-                clearCache: 101
-            }
-        }
-    )
-
-    button create-line (
-        buttonName: CREATE_LINE
-        label: New Line
-        layout {
-            sequence: 30
-            region: @actions
-            slot: regionBody
-        }
-        appearance {
-            buttonTemplate: @/text
-            hot: true
-            templateOptions: #DEFAULT#
-        }
-        behavior {
-            action: redirectThisApp
-            target: {
-                page: 101
-                clearCache: 101
-            }
-        }
-    )
-
-    region OUTBOUND_ORDER_LINES_REPORT (
+    region OUTBOUND_ORDER_LINES_GRID (
         name: Outbound Order Lines
-        type: interactiveReport
+        type: interactiveGrid
         source {
             location: localDatabase
             type: sqlQuery
             sqlQuery:
                 ```sql
                 select
-                    ol.line_id,
-                    o.order_number,
-                    i.item_code,
-                    ol.qty_ordered,
-                    ol.qty_allocated,
-                    ol.qty_picked,
-                    ol.qty_shipped,
-                    ol.status
-                from outbound_order_line ol
-                join outbound_order o on o.order_id = ol.order_id
-                join item i on i.item_id = ol.item_id
-                order by ol.order_id desc, ol.line_id
+                    line_id,
+                    order_id,
+                    item_id,
+                    qty_ordered,
+                    qty_allocated,
+                    qty_picked,
+                    qty_shipped,
+                    status
+                from outbound_order_line
+                order by order_id desc, line_id
                 ```
         }
         layout {
@@ -141,14 +61,32 @@ page 100 (
             slot: BODY
         }
         appearance {
-            template: @/interactive-report
+            template: @/standard
             templateOptions: #DEFAULT#
         }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
         pagination {
-            type: rowRangesXToY
+            type: page
+            showTotalCount: true
         }
         messages {
             whenNoDataFound: No outbound order lines found.
+        }
+        toolbar {
+            controls: [
+                searchCol
+                searchField
+                actionsMenu
+                resetButton
+                saveButton
+            ]
         }
         download {
             formats: [
@@ -157,47 +95,135 @@ page 100 (
             ]
         }
 
-        column LINE_ID (
-            type: plainText
-            heading {
-                heading: Line Id
+        savedReport PRIMARY (
+            visibility: primary
+            view {
+                default: grid
             }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    sequence: 0
+                }
+            )
+            displayColumn (
+                column: @LINE_ID
+                layout {
+                    sequence: 1
+                }
+            )
+            displayColumn (
+                column: @ORDER_ID
+                layout {
+                    sequence: 2
+                }
+            )
+            displayColumn (
+                column: @ITEM_ID
+                layout {
+                    sequence: 3
+                }
+            )
+            displayColumn (
+                column: @QTY_ORDERED
+                layout {
+                    sequence: 4
+                }
+            )
+            displayColumn (
+                column: @QTY_ALLOCATED
+                layout {
+                    sequence: 5
+                }
+            )
+            displayColumn (
+                column: @QTY_PICKED
+                layout {
+                    sequence: 6
+                }
+            )
+            displayColumn (
+                column: @QTY_SHIPPED
+                layout {
+                    sequence: 7
+                }
+            )
+            displayColumn (
+                column: @STATUS
+                layout {
+                    sequence: 8
+                }
+            )
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
             layout {
-                sequence: 10
-            }
-            source {
-                dataType: NUMBER
+                sequence: 5
             }
         )
 
-        column ORDER_NUMBER (
-            type: plainText
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+        )
+
+        column LINE_ID (
+            type: hidden
+            layout {
+                sequence: 15
+            }
+            source {
+                databaseColumn: LINE_ID
+                dataType: number
+                primaryKey: true
+            }
+        )
+
+        column ORDER_ID (
+            type: selectList
             heading {
                 heading: Order
             }
             layout {
                 sequence: 20
             }
+            lov {
+                type: sharedComponent
+                lov: @outbound-order-any
+            }
             source {
-                dataType: STRING
+                databaseColumn: ORDER_ID
+                dataType: number
             }
         )
 
-        column ITEM_CODE (
-            type: plainText
+        column ITEM_ID (
+            type: selectList
             heading {
                 heading: Item
             }
             layout {
                 sequence: 30
             }
+            lov {
+                type: sharedComponent
+                lov: @item-active
+            }
             source {
-                dataType: STRING
+                databaseColumn: ITEM_ID
+                dataType: number
             }
         )
 
         column QTY_ORDERED (
-            type: plainText
+            type: numberField
             heading {
                 heading: Qty Ordered
                 alignment: end
@@ -207,12 +233,13 @@ page 100 (
                 columnAlignment: end
             }
             source {
-                dataType: NUMBER
+                databaseColumn: QTY_ORDERED
+                dataType: number
             }
         )
 
         column QTY_ALLOCATED (
-            type: plainText
+            type: numberField
             heading {
                 heading: Qty Allocated
                 alignment: end
@@ -222,12 +249,13 @@ page 100 (
                 columnAlignment: end
             }
             source {
-                dataType: NUMBER
+                databaseColumn: QTY_ALLOCATED
+                dataType: number
             }
         )
 
         column QTY_PICKED (
-            type: plainText
+            type: numberField
             heading {
                 heading: Qty Picked
                 alignment: end
@@ -237,12 +265,13 @@ page 100 (
                 columnAlignment: end
             }
             source {
-                dataType: NUMBER
+                databaseColumn: QTY_PICKED
+                dataType: number
             }
         )
 
         column QTY_SHIPPED (
-            type: plainText
+            type: numberField
             heading {
                 heading: Qty Shipped
                 alignment: end
@@ -252,46 +281,37 @@ page 100 (
                 columnAlignment: end
             }
             source {
-                dataType: NUMBER
+                databaseColumn: QTY_SHIPPED
+                dataType: number
             }
         )
 
         column STATUS (
-            type: plainText
+            type: selectList
             heading {
                 heading: Status
             }
             layout {
                 sequence: 80
             }
+            lov {
+                type: staticValues
+                staticValues: STATIC:Pending;PENDING,Allocated;ALLOCATED,Picked;PICKED,Short;SHORT,Cancelled;CANCELLED
+            }
             source {
-                dataType: STRING
+                databaseColumn: STATUS
+                dataType: varchar2
             }
         )
     )
 
-    dynamicAction refresh-on-edit (
-        name: Refresh on Edit
+    process OUTBOUND_ORDER_LINES_GRID_ARP (
+        name: Outbound Order Lines - Save Data
+        type: interactiveGridAutoRowProcessing
+        editableRegion: @OUTBOUND_ORDER_LINES_GRID
         execution {
             sequence: 10
         }
-        when {
-            event: apexafterclosedialog
-            selectionType: region
-            region: @OUTBOUND_ORDER_LINES_REPORT
-        }
-
-        action refresh-outbound-order-lines-report (
-            action: refresh
-            affectedElements {
-                selectionType: region
-                region: @OUTBOUND_ORDER_LINES_REPORT
-            }
-            execution {
-                sequence: 10
-                fireOnInit: false
-            }
-        )
     )
 
 )

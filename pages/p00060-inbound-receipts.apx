@@ -12,7 +12,7 @@ page 60 (
         formAutoComplete: false
     }
     help {
-        helpText: Inbound receipt headers (FR-02). Select a receipt and click Edit to open it, or use New Receipt to create one. Supplier and Warehouse are selected from their active master lists. Business logic (receive, putaway, complete) runs through PKG_INBOUND, not through direct edits to STATUS.
+        helpText: Inbound receipt headers (FR-02). Create a receipt here, then add/receive lines on the Inbound Receipt Lines page. Supplier and Warehouse are selected from active master lists. Business logic (receive, putaway, complete) runs through PKG_INBOUND, not direct edits to STATUS.
     }
 
     region breadcrumb (
@@ -35,108 +35,24 @@ page 60 (
         }
     )
 
-    region actions (
-        name: Actions
-        type: staticContent
-        layout {
-            sequence: 15
-            slot: BODY
-        }
-        appearance {
-            template: @/blank-with-attributes
-            templateOptions: #DEFAULT#
-        }
-    )
-
-    pageItem P60_EDIT_SELECT (
-        type: selectList
-        label {
-            label: Select Receipt to Edit
-        }
-        lov {
-            type: sharedComponent
-            lov: @inbound-receipt-any
-        }
-        layout {
-            sequence: 10
-            region: @actions
-            slot: regionBody
-        }
-        appearance {
-            template: @/optional-floating
-            templateOptions: #DEFAULT#
-        }
-        help {
-            helpText: Pick a receipt, then click Edit to open it.
-        }
-    )
-
-    button edit-receipt (
-        buttonName: EDIT_RECEIPT
-        label: Edit
-        layout {
-            sequence: 20
-            region: @actions
-            slot: regionBody
-        }
-        appearance {
-            buttonTemplate: @/text
-            templateOptions: #DEFAULT#
-        }
-        behavior {
-            action: redirectThisApp
-            target: {
-                page: 61
-                items: {
-                    P61_RECEIPT_ID: &P60_EDIT_SELECT.
-                }
-                clearCache: 61
-            }
-        }
-    )
-
-    button create-receipt (
-        buttonName: CREATE_RECEIPT
-        label: New Receipt
-        layout {
-            sequence: 30
-            region: @actions
-            slot: regionBody
-        }
-        appearance {
-            buttonTemplate: @/text
-            hot: true
-            templateOptions: #DEFAULT#
-        }
-        behavior {
-            action: redirectThisApp
-            target: {
-                page: 61
-                clearCache: 61
-            }
-        }
-    )
-
-    region INBOUND_RECEIPTS_REPORT (
+    region INBOUND_RECEIPTS_GRID (
         name: Inbound Receipts
-        type: interactiveReport
+        type: interactiveGrid
         source {
             location: localDatabase
             type: sqlQuery
             sqlQuery:
                 ```sql
                 select
-                    r.receipt_id,
-                    s.supplier_code,
-                    r.po_reference,
-                    w.warehouse_code,
-                    r.expected_date,
-                    r.status,
-                    r.received_by
-                from inbound_receipt r
-                left join supplier s on s.supplier_id = r.supplier_id
-                join warehouse w on w.warehouse_id = r.warehouse_id
-                order by r.receipt_id desc
+                    receipt_id,
+                    supplier_id,
+                    po_reference,
+                    warehouse_id,
+                    expected_date,
+                    status,
+                    received_by
+                from inbound_receipt
+                order by receipt_id desc
                 ```
         }
         layout {
@@ -144,14 +60,32 @@ page 60 (
             slot: BODY
         }
         appearance {
-            template: @/interactive-report
+            template: @/standard
             templateOptions: #DEFAULT#
         }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
         pagination {
-            type: rowRangesXToY
+            type: page
+            showTotalCount: true
         }
         messages {
             whenNoDataFound: No inbound receipts found.
+        }
+        toolbar {
+            controls: [
+                searchCol
+                searchField
+                actionsMenu
+                resetButton
+                saveButton
+            ]
         }
         download {
             formats: [
@@ -160,123 +94,204 @@ page 60 (
             ]
         }
 
-        column RECEIPT_ID (
-            type: plainText
-            heading {
-                heading: Receipt Id
+        savedReport PRIMARY (
+            visibility: primary
+            view {
+                default: grid
             }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    sequence: 0
+                }
+            )
+            displayColumn (
+                column: @RECEIPT_ID
+                layout {
+                    sequence: 1
+                }
+            )
+            displayColumn (
+                column: @SUPPLIER_ID
+                layout {
+                    sequence: 2
+                }
+            )
+            displayColumn (
+                column: @PO_REFERENCE
+                layout {
+                    sequence: 3
+                }
+            )
+            displayColumn (
+                column: @WAREHOUSE_ID
+                layout {
+                    sequence: 4
+                }
+            )
+            displayColumn (
+                column: @EXPECTED_DATE
+                layout {
+                    sequence: 5
+                }
+            )
+            displayColumn (
+                column: @STATUS
+                layout {
+                    sequence: 6
+                }
+            )
+            displayColumn (
+                column: @RECEIVED_BY
+                layout {
+                    sequence: 7
+                }
+            )
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
             layout {
-                sequence: 10
-            }
-            source {
-                dataType: NUMBER
+                sequence: 5
             }
         )
 
-        column SUPPLIER_CODE (
-            type: plainText
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+        )
+
+        column RECEIPT_ID (
+            type: numberField
             heading {
-                heading: Supplier
+                heading: Receipt Id
             }
             layout {
                 sequence: 20
             }
             source {
-                dataType: STRING
+                databaseColumn: RECEIPT_ID
+                dataType: number
+                primaryKey: true
             }
         )
 
-        column PO_REFERENCE (
-            type: plainText
+        column SUPPLIER_ID (
+            type: selectList
             heading {
-                heading: PO Reference
+                heading: Supplier
             }
             layout {
                 sequence: 30
             }
+            lov {
+                type: sharedComponent
+                lov: @supplier-active
+            }
             source {
-                dataType: STRING
+                databaseColumn: SUPPLIER_ID
+                dataType: number
             }
         )
 
-        column WAREHOUSE_CODE (
-            type: plainText
+        column PO_REFERENCE (
+            type: textField
             heading {
-                heading: Warehouse
+                heading: PO Reference
             }
             layout {
                 sequence: 40
             }
+            validation {
+                maxLength: 40
+            }
             source {
-                dataType: STRING
+                databaseColumn: PO_REFERENCE
+                dataType: varchar2
             }
         )
 
-        column EXPECTED_DATE (
-            type: plainText
+        column WAREHOUSE_ID (
+            type: selectList
             heading {
-                heading: Expected Date
+                heading: Warehouse
             }
             layout {
                 sequence: 50
             }
-            appearance {
-                formatMask: DD-MON-YYYY
+            lov {
+                type: sharedComponent
+                lov: @warehouse-active
             }
             source {
-                dataType: DATE
+                databaseColumn: WAREHOUSE_ID
+                dataType: number
             }
         )
 
-        column STATUS (
-            type: plainText
+        column EXPECTED_DATE (
+            type: datePicker
             heading {
-                heading: Status
+                heading: Expected Date
             }
             layout {
                 sequence: 60
             }
             source {
-                dataType: STRING
+                databaseColumn: EXPECTED_DATE
+                dataType: date
             }
         )
 
-        column RECEIVED_BY (
-            type: plainText
+        column STATUS (
+            type: selectList
             heading {
-                heading: Received By
+                heading: Status
             }
             layout {
                 sequence: 70
             }
+            lov {
+                type: staticValues
+                staticValues: STATIC:Expected;EXPECTED,Receiving;RECEIVING,Completed;COMPLETED,Closed;CLOSED
+            }
             source {
-                dataType: STRING
+                databaseColumn: STATUS
+                dataType: varchar2
+            }
+        )
+
+        column RECEIVED_BY (
+            type: textField
+            heading {
+                heading: Received By
+            }
+            layout {
+                sequence: 80
+            }
+            validation {
+                maxLength: 60
+            }
+            source {
+                databaseColumn: RECEIVED_BY
+                dataType: varchar2
             }
         )
     )
 
-    dynamicAction refresh-on-edit (
-        name: Refresh on Edit
+    process INBOUND_RECEIPTS_GRID_ARP (
+        name: Inbound Receipts - Save Data
+        type: interactiveGridAutoRowProcessing
+        editableRegion: @INBOUND_RECEIPTS_GRID
         execution {
             sequence: 10
         }
-        when {
-            event: apexafterclosedialog
-            selectionType: region
-            region: @INBOUND_RECEIPTS_REPORT
-        }
-
-        action refresh-inbound-receipts-report (
-            action: refresh
-            affectedElements {
-                selectionType: region
-                region: @INBOUND_RECEIPTS_REPORT
-            }
-            execution {
-                sequence: 10
-                fireOnInit: false
-            }
-        )
     )
 
 )

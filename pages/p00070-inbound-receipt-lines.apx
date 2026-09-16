@@ -12,7 +12,7 @@ page 70 (
         formAutoComplete: false
     }
     help {
-        helpText: Inbound receipt lines (FR-02). Select a line and click Edit to open it, or use New Line to plan an expected line. Receipt, Item, Lot and Putaway Location are all selected from master lists. RECEIVED_QTY, PUTAWAY_LOCATION_ID and STATUS are normally maintained by PKG_INBOUND.receive_line / putaway_line, not by direct edit here.
+        helpText: Inbound receipt lines (FR-02). Receipt, Item, Lot and Putaway Location are selected from master lists. RECEIVED_QTY, PUTAWAY_LOCATION_ID and STATUS are normally maintained by PKG_INBOUND.receive_line / putaway_line, not by direct edit here; this grid is for planning expected lines and reviewing progress.
     }
 
     region breadcrumb (
@@ -35,106 +35,25 @@ page 70 (
         }
     )
 
-    region actions (
-        name: Actions
-        type: staticContent
-        layout {
-            sequence: 15
-            slot: BODY
-        }
-        appearance {
-            template: @/blank-with-attributes
-            templateOptions: #DEFAULT#
-        }
-    )
-
-    pageItem P70_EDIT_SELECT (
-        type: numberField
-        label {
-            label: Line Id to Edit
-        }
-        layout {
-            sequence: 10
-            region: @actions
-            slot: regionBody
-        }
-        appearance {
-            template: @/optional-floating
-            templateOptions: #DEFAULT#
-        }
-        help {
-            helpText: Enter the Line Id shown below, then click Edit to open it.
-        }
-    )
-
-    button edit-line (
-        buttonName: EDIT_LINE
-        label: Edit
-        layout {
-            sequence: 20
-            region: @actions
-            slot: regionBody
-        }
-        appearance {
-            buttonTemplate: @/text
-            templateOptions: #DEFAULT#
-        }
-        behavior {
-            action: redirectThisApp
-            target: {
-                page: 71
-                items: {
-                    P71_LINE_ID: &P70_EDIT_SELECT.
-                }
-                clearCache: 71
-            }
-        }
-    )
-
-    button create-line (
-        buttonName: CREATE_LINE
-        label: New Line
-        layout {
-            sequence: 30
-            region: @actions
-            slot: regionBody
-        }
-        appearance {
-            buttonTemplate: @/text
-            hot: true
-            templateOptions: #DEFAULT#
-        }
-        behavior {
-            action: redirectThisApp
-            target: {
-                page: 71
-                clearCache: 71
-            }
-        }
-    )
-
-    region INBOUND_RECEIPT_LINES_REPORT (
+    region INBOUND_RECEIPT_LINES_GRID (
         name: Inbound Receipt Lines
-        type: interactiveReport
+        type: interactiveGrid
         source {
             location: localDatabase
             type: sqlQuery
             sqlQuery:
                 ```sql
                 select
-                    rl.line_id,
-                    rl.receipt_id,
-                    i.item_code,
-                    lt.lot_number,
-                    rl.expected_qty,
-                    rl.received_qty,
-                    loc.location_code as putaway_location_code,
-                    rl.status
-                from inbound_receipt_line rl
-                join item i on i.item_id = rl.item_id
-                left join lot lt on lt.lot_id = rl.lot_id
-                left join location loc on loc.location_id = rl.putaway_location_id
-                order by rl.receipt_id desc, rl.line_id
+                    line_id,
+                    receipt_id,
+                    item_id,
+                    lot_id,
+                    expected_qty,
+                    received_qty,
+                    putaway_location_id,
+                    status
+                from inbound_receipt_line
+                order by receipt_id desc, line_id
                 ```
         }
         layout {
@@ -142,14 +61,32 @@ page 70 (
             slot: BODY
         }
         appearance {
-            template: @/interactive-report
+            template: @/standard
             templateOptions: #DEFAULT#
         }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
         pagination {
-            type: rowRangesXToY
+            type: page
+            showTotalCount: true
         }
         messages {
             whenNoDataFound: No inbound receipt lines found.
+        }
+        toolbar {
+            controls: [
+                searchCol
+                searchField
+                actionsMenu
+                resetButton
+                saveButton
+            ]
         }
         download {
             formats: [
@@ -158,77 +95,159 @@ page 70 (
             ]
         }
 
-        column LINE_ID (
-            type: plainText
-            heading {
-                heading: Line Id
+        savedReport PRIMARY (
+            visibility: primary
+            view {
+                default: grid
             }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    sequence: 0
+                }
+            )
+            displayColumn (
+                column: @LINE_ID
+                layout {
+                    sequence: 1
+                }
+            )
+            displayColumn (
+                column: @RECEIPT_ID
+                layout {
+                    sequence: 2
+                }
+            )
+            displayColumn (
+                column: @ITEM_ID
+                layout {
+                    sequence: 3
+                }
+            )
+            displayColumn (
+                column: @LOT_ID
+                layout {
+                    sequence: 4
+                }
+            )
+            displayColumn (
+                column: @EXPECTED_QTY
+                layout {
+                    sequence: 5
+                }
+            )
+            displayColumn (
+                column: @RECEIVED_QTY
+                layout {
+                    sequence: 6
+                }
+            )
+            displayColumn (
+                column: @PUTAWAY_LOCATION_ID
+                layout {
+                    sequence: 7
+                }
+            )
+            displayColumn (
+                column: @STATUS
+                layout {
+                    sequence: 8
+                }
+            )
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
             layout {
-                sequence: 10
-            }
-            source {
-                dataType: NUMBER
+                sequence: 5
             }
         )
 
-        column RECEIPT_ID (
-            type: plainText
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+        )
+
+        column LINE_ID (
+            type: numberField
             heading {
-                heading: Receipt Id
+                heading: Line Id
             }
             layout {
                 sequence: 20
             }
             source {
-                dataType: NUMBER
+                databaseColumn: LINE_ID
+                dataType: number
+                primaryKey: true
             }
         )
 
-        column ITEM_CODE (
-            type: plainText
+        column RECEIPT_ID (
+            type: selectList
             heading {
-                heading: Item
+                heading: Receipt
             }
             layout {
                 sequence: 30
             }
+            lov {
+                type: sharedComponent
+                lov: @inbound-receipt-any
+            }
             source {
-                dataType: STRING
+                databaseColumn: RECEIPT_ID
+                dataType: number
             }
         )
 
-        column LOT_NUMBER (
-            type: plainText
+        column ITEM_ID (
+            type: selectList
             heading {
-                heading: Lot
+                heading: Item
             }
             layout {
                 sequence: 40
             }
+            lov {
+                type: sharedComponent
+                lov: @item-active
+            }
             source {
-                dataType: STRING
+                databaseColumn: ITEM_ID
+                dataType: number
+            }
+        )
+
+        column LOT_ID (
+            type: selectList
+            heading {
+                heading: Lot
+            }
+            layout {
+                sequence: 50
+            }
+            lov {
+                type: sharedComponent
+                lov: @lot-any
+                displayExtraValues: true
+            }
+            source {
+                databaseColumn: LOT_ID
+                dataType: number
             }
         )
 
         column EXPECTED_QTY (
-            type: plainText
+            type: numberField
             heading {
                 heading: Expected Qty
-                alignment: end
-            }
-            layout {
-                sequence: 50
-                columnAlignment: end
-            }
-            source {
-                dataType: NUMBER
-            }
-        )
-
-        column RECEIVED_QTY (
-            type: plainText
-            heading {
-                heading: Received Qty
                 alignment: end
             }
             layout {
@@ -236,59 +255,72 @@ page 70 (
                 columnAlignment: end
             }
             source {
-                dataType: NUMBER
+                databaseColumn: EXPECTED_QTY
+                dataType: number
             }
         )
 
-        column PUTAWAY_LOCATION_CODE (
-            type: plainText
+        column RECEIVED_QTY (
+            type: numberField
+            heading {
+                heading: Received Qty
+                alignment: end
+            }
+            layout {
+                sequence: 70
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: RECEIVED_QTY
+                dataType: number
+            }
+        )
+
+        column PUTAWAY_LOCATION_ID (
+            type: selectList
             heading {
                 heading: Putaway Location
             }
             layout {
-                sequence: 70
+                sequence: 80
+            }
+            lov {
+                type: sharedComponent
+                lov: @location-active
+                displayExtraValues: true
             }
             source {
-                dataType: STRING
+                databaseColumn: PUTAWAY_LOCATION_ID
+                dataType: number
             }
         )
 
         column STATUS (
-            type: plainText
+            type: selectList
             heading {
                 heading: Status
             }
             layout {
-                sequence: 80
+                sequence: 90
+            }
+            lov {
+                type: staticValues
+                staticValues: STATIC:Pending;PENDING,Received;RECEIVED,Putaway;PUTAWAY,Short;SHORT,Cancelled;CANCELLED
             }
             source {
-                dataType: STRING
+                databaseColumn: STATUS
+                dataType: varchar2
             }
         )
     )
 
-    dynamicAction refresh-on-edit (
-        name: Refresh on Edit
+    process INBOUND_RECEIPT_LINES_GRID_ARP (
+        name: Inbound Receipt Lines - Save Data
+        type: interactiveGridAutoRowProcessing
+        editableRegion: @INBOUND_RECEIPT_LINES_GRID
         execution {
             sequence: 10
         }
-        when {
-            event: apexafterclosedialog
-            selectionType: region
-            region: @INBOUND_RECEIPT_LINES_REPORT
-        }
-
-        action refresh-inbound-receipt-lines-report (
-            action: refresh
-            affectedElements {
-                selectionType: region
-                region: @INBOUND_RECEIPT_LINES_REPORT
-            }
-            execution {
-                sequence: 10
-                fireOnInit: false
-            }
-        )
     )
 
 )

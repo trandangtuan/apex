@@ -12,7 +12,7 @@ page 10 (
         formAutoComplete: false
     }
     help {
-        helpText: Browse the item / SKU catalog (FR-01). Click the edit icon to open a row, or use New Item to create one. UOM is selected from the UOM master table; Active/Lot Tracked are toggled in the edit form.
+        helpText: Browse and maintain the item / SKU catalog (FR-01). Use Actions > Add Row to create a new item, edit cells inline, and Save to persist changes. UOM is selected from the active UOM master list.
     }
 
     region breadcrumb (
@@ -35,91 +35,9 @@ page 10 (
         }
     )
 
-    region actions (
-        name: Actions
-        type: staticContent
-        layout {
-            sequence: 15
-            slot: BODY
-        }
-        appearance {
-            template: @/blank-with-attributes
-            templateOptions: #DEFAULT#
-        }
-    )
-
-    pageItem P10_EDIT_SELECT (
-        type: selectList
-        label {
-            label: Select Item to Edit
-        }
-        lov {
-            type: sharedComponent
-            lov: @item-active
-        }
-        layout {
-            sequence: 10
-            region: @actions
-            slot: regionBody
-        }
-        appearance {
-            template: @/optional-floating
-            templateOptions: #DEFAULT#
-        }
-        help {
-            helpText: Pick an active item, then click Edit to open it.
-        }
-    )
-
-    button edit-item (
-        buttonName: EDIT_ITEM
-        label: Edit
-        layout {
-            sequence: 20
-            region: @actions
-            slot: regionBody
-        }
-        appearance {
-            buttonTemplate: @/text
-            templateOptions: #DEFAULT#
-        }
-        behavior {
-            action: redirectThisApp
-            target: {
-                page: 11
-                items: {
-                    P11_ITEM_ID: &P10_EDIT_SELECT.
-                }
-                clearCache: 11
-            }
-        }
-    )
-
-    button create-item (
-        buttonName: CREATE_ITEM
-        label: New Item
-        layout {
-            sequence: 30
-            region: @actions
-            slot: regionBody
-        }
-        appearance {
-            buttonTemplate: @/text
-            hot: true
-            templateOptions: #DEFAULT#
-        }
-        behavior {
-            action: redirectThisApp
-            target: {
-                page: 11
-                clearCache: 11
-            }
-        }
-    )
-
-    region ITEMS_REPORT (
+    region ITEMS_GRID (
         name: Items
-        type: interactiveReport
+        type: interactiveGrid
         source {
             location: localDatabase
             type: sqlQuery
@@ -144,14 +62,32 @@ page 10 (
             slot: BODY
         }
         appearance {
-            template: @/interactive-report
+            template: @/standard
             templateOptions: #DEFAULT#
         }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
         pagination {
-            type: rowRangesXToY
+            type: page
+            showTotalCount: true
         }
         messages {
             whenNoDataFound: No items found.
+        }
+        toolbar {
+            controls: [
+                searchCol
+                searchField
+                actionsMenu
+                resetButton
+                saveButton
+            ]
         }
         download {
             formats: [
@@ -160,86 +96,185 @@ page 10 (
             ]
         }
 
-        column ITEM_ID (
-            type: hidden
-            heading {
-                heading: Item Id
+        savedReport PRIMARY (
+            visibility: primary
+            view {
+                default: grid
             }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    sequence: 0
+                }
+            )
+            displayColumn (
+                column: @ITEM_CODE
+                layout {
+                    sequence: 1
+                }
+            )
+            displayColumn (
+                column: @ITEM_NAME
+                layout {
+                    sequence: 2
+                }
+            )
+            displayColumn (
+                column: @DEVICE_CATEGORY
+                layout {
+                    sequence: 3
+                }
+            )
+            displayColumn (
+                column: @UOM
+                layout {
+                    sequence: 4
+                }
+            )
+            displayColumn (
+                column: @BARCODE_VALUE
+                layout {
+                    sequence: 5
+                }
+            )
+            displayColumn (
+                column: @IS_LOT_TRACKED
+                layout {
+                    sequence: 6
+                }
+            )
+            displayColumn (
+                column: @REORDER_POINT
+                layout {
+                    sequence: 7
+                }
+            )
+            displayColumn (
+                column: @IS_ACTIVE
+                layout {
+                    sequence: 8
+                }
+            )
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 5
+            }
+        )
+
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
             layout {
                 sequence: 10
             }
+        )
+
+        column ITEM_ID (
+            type: hidden
+            layout {
+                sequence: 15
+            }
             source {
-                dataType: NUMBER
+                databaseColumn: ITEM_ID
+                dataType: number
+                primaryKey: true
             }
         )
 
         column ITEM_CODE (
-            type: plainText
+            type: textField
             heading {
                 heading: Item Code
             }
             layout {
                 sequence: 20
             }
+            validation {
+                maxLength: 30
+            }
             source {
-                dataType: STRING
+                databaseColumn: ITEM_CODE
+                dataType: varchar2
             }
         )
 
         column ITEM_NAME (
-            type: plainText
+            type: textField
             heading {
                 heading: Item Name
             }
             layout {
                 sequence: 30
             }
+            validation {
+                maxLength: 200
+            }
             source {
-                dataType: STRING
+                databaseColumn: ITEM_NAME
+                dataType: varchar2
             }
         )
 
         column DEVICE_CATEGORY (
-            type: plainText
+            type: textField
             heading {
                 heading: Device Category
             }
             layout {
                 sequence: 40
             }
+            validation {
+                maxLength: 40
+            }
             source {
-                dataType: STRING
+                databaseColumn: DEVICE_CATEGORY
+                dataType: varchar2
             }
         )
 
         column UOM (
-            type: plainText
+            type: selectList
             heading {
                 heading: UOM
             }
             layout {
                 sequence: 50
             }
+            lov {
+                type: sharedComponent
+                lov: @uom-active
+            }
             source {
-                dataType: STRING
+                databaseColumn: UOM
+                dataType: varchar2
             }
         )
 
         column BARCODE_VALUE (
-            type: plainText
+            type: textField
             heading {
                 heading: Barcode
             }
             layout {
                 sequence: 60
             }
+            validation {
+                maxLength: 64
+            }
             source {
-                dataType: STRING
+                databaseColumn: BARCODE_VALUE
+                dataType: varchar2
             }
         )
 
         column IS_LOT_TRACKED (
-            type: plainText
+            type: checkbox
             heading {
                 heading: Lot Tracked
             }
@@ -247,12 +282,13 @@ page 10 (
                 sequence: 70
             }
             source {
-                dataType: STRING
+                databaseColumn: IS_LOT_TRACKED
+                dataType: varchar2
             }
         )
 
         column REORDER_POINT (
-            type: plainText
+            type: numberField
             heading {
                 heading: Reorder Point
                 alignment: end
@@ -262,12 +298,13 @@ page 10 (
                 columnAlignment: end
             }
             source {
-                dataType: NUMBER
+                databaseColumn: REORDER_POINT
+                dataType: number
             }
         )
 
         column IS_ACTIVE (
-            type: plainText
+            type: checkbox
             heading {
                 heading: Active
             }
@@ -275,33 +312,19 @@ page 10 (
                 sequence: 90
             }
             source {
-                dataType: STRING
+                databaseColumn: IS_ACTIVE
+                dataType: varchar2
             }
         )
     )
 
-    dynamicAction refresh-on-edit (
-        name: Refresh on Edit
+    process ITEMS_GRID_ARP (
+        name: Items - Save Data
+        type: interactiveGridAutoRowProcessing
+        editableRegion: @ITEMS_GRID
         execution {
             sequence: 10
         }
-        when {
-            event: apexafterclosedialog
-            selectionType: region
-            region: @ITEMS_REPORT
-        }
-
-        action refresh-items-report (
-            action: refresh
-            affectedElements {
-                selectionType: region
-                region: @ITEMS_REPORT
-            }
-            execution {
-                sequence: 10
-                fireOnInit: false
-            }
-        )
     )
 
 )

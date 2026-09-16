@@ -12,7 +12,7 @@ page 20 (
         formAutoComplete: false
     }
     help {
-        helpText: Browse warehouse storage locations / bins (FR-01, FR-05). Select a location and click Edit to open it, or use New Location to create one. Warehouse is selected from the active Warehouse master list.
+        helpText: Browse and maintain warehouse storage locations / bins (FR-01, FR-05). Warehouse is selected from the active Warehouse master list.
     }
 
     region breadcrumb (
@@ -35,109 +35,26 @@ page 20 (
         }
     )
 
-    region actions (
-        name: Actions
-        type: staticContent
-        layout {
-            sequence: 15
-            slot: BODY
-        }
-        appearance {
-            template: @/blank-with-attributes
-            templateOptions: #DEFAULT#
-        }
-    )
-
-    pageItem P20_EDIT_SELECT (
-        type: selectList
-        label {
-            label: Select Location to Edit
-        }
-        lov {
-            type: sharedComponent
-            lov: @location-active
-        }
-        layout {
-            sequence: 10
-            region: @actions
-            slot: regionBody
-        }
-        appearance {
-            template: @/optional-floating
-            templateOptions: #DEFAULT#
-        }
-        help {
-            helpText: Pick an active location, then click Edit to open it.
-        }
-    )
-
-    button edit-location (
-        buttonName: EDIT_LOCATION
-        label: Edit
-        layout {
-            sequence: 20
-            region: @actions
-            slot: regionBody
-        }
-        appearance {
-            buttonTemplate: @/text
-            templateOptions: #DEFAULT#
-        }
-        behavior {
-            action: redirectThisApp
-            target: {
-                page: 21
-                items: {
-                    P21_LOCATION_ID: &P20_EDIT_SELECT.
-                }
-                clearCache: 21
-            }
-        }
-    )
-
-    button create-location (
-        buttonName: CREATE_LOCATION
-        label: New Location
-        layout {
-            sequence: 30
-            region: @actions
-            slot: regionBody
-        }
-        appearance {
-            buttonTemplate: @/text
-            hot: true
-            templateOptions: #DEFAULT#
-        }
-        behavior {
-            action: redirectThisApp
-            target: {
-                page: 21
-                clearCache: 21
-            }
-        }
-    )
-
-    region LOCATIONS_REPORT (
+    region LOCATIONS_GRID (
         name: Locations
-        type: interactiveReport
+        type: interactiveGrid
         source {
             location: localDatabase
             type: sqlQuery
             sqlQuery:
                 ```sql
                 select
-                    l.location_id,
-                    l.location_code,
-                    w.warehouse_code,
-                    l.zone,
-                    l.aisle,
-                    l.rack,
-                    l.shelf,
-                    l.location_type,
-                    l.is_active
-                from location l
-                join warehouse w on w.warehouse_id = l.warehouse_id
-                order by l.location_code
+                    location_id,
+                    location_code,
+                    warehouse_id,
+                    zone,
+                    aisle,
+                    rack,
+                    shelf,
+                    location_type,
+                    is_active
+                from location
+                order by location_code
                 ```
         }
         layout {
@@ -145,14 +62,32 @@ page 20 (
             slot: BODY
         }
         appearance {
-            template: @/interactive-report
+            template: @/standard
             templateOptions: #DEFAULT#
         }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
         pagination {
-            type: rowRangesXToY
+            type: page
+            showTotalCount: true
         }
         messages {
             whenNoDataFound: No locations found.
+        }
+        toolbar {
+            controls: [
+                searchCol
+                searchField
+                actionsMenu
+                resetButton
+                saveButton
+            ]
         }
         download {
             formats: [
@@ -161,112 +96,220 @@ page 20 (
             ]
         }
 
-        column LOCATION_ID (
-            type: hidden
-            heading {
-                heading: Location Id
+        savedReport PRIMARY (
+            visibility: primary
+            view {
+                default: grid
             }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    sequence: 0
+                }
+            )
+            displayColumn (
+                column: @LOCATION_CODE
+                layout {
+                    sequence: 1
+                }
+            )
+            displayColumn (
+                column: @WAREHOUSE_ID
+                layout {
+                    sequence: 2
+                }
+            )
+            displayColumn (
+                column: @ZONE
+                layout {
+                    sequence: 3
+                }
+            )
+            displayColumn (
+                column: @AISLE
+                layout {
+                    sequence: 4
+                }
+            )
+            displayColumn (
+                column: @RACK
+                layout {
+                    sequence: 5
+                }
+            )
+            displayColumn (
+                column: @SHELF
+                layout {
+                    sequence: 6
+                }
+            )
+            displayColumn (
+                column: @LOCATION_TYPE
+                layout {
+                    sequence: 7
+                }
+            )
+            displayColumn (
+                column: @IS_ACTIVE
+                layout {
+                    sequence: 8
+                }
+            )
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 5
+            }
+        )
+
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
             layout {
                 sequence: 10
             }
+        )
+
+        column LOCATION_ID (
+            type: hidden
+            layout {
+                sequence: 15
+            }
             source {
-                dataType: NUMBER
+                databaseColumn: LOCATION_ID
+                dataType: number
+                primaryKey: true
             }
         )
 
         column LOCATION_CODE (
-            type: plainText
+            type: textField
             heading {
                 heading: Location Code
             }
             layout {
                 sequence: 20
             }
+            validation {
+                maxLength: 30
+            }
             source {
-                dataType: STRING
+                databaseColumn: LOCATION_CODE
+                dataType: varchar2
             }
         )
 
-        column WAREHOUSE_CODE (
-            type: plainText
+        column WAREHOUSE_ID (
+            type: selectList
             heading {
                 heading: Warehouse
             }
             layout {
                 sequence: 30
             }
+            lov {
+                type: sharedComponent
+                lov: @warehouse-active
+            }
             source {
-                dataType: STRING
+                databaseColumn: WAREHOUSE_ID
+                dataType: number
             }
         )
 
         column ZONE (
-            type: plainText
+            type: textField
             heading {
                 heading: Zone
             }
             layout {
                 sequence: 40
             }
+            validation {
+                maxLength: 20
+            }
             source {
-                dataType: STRING
+                databaseColumn: ZONE
+                dataType: varchar2
             }
         )
 
         column AISLE (
-            type: plainText
+            type: textField
             heading {
                 heading: Aisle
             }
             layout {
                 sequence: 50
             }
+            validation {
+                maxLength: 10
+            }
             source {
-                dataType: STRING
+                databaseColumn: AISLE
+                dataType: varchar2
             }
         )
 
         column RACK (
-            type: plainText
+            type: textField
             heading {
                 heading: Rack
             }
             layout {
                 sequence: 60
             }
+            validation {
+                maxLength: 10
+            }
             source {
-                dataType: STRING
+                databaseColumn: RACK
+                dataType: varchar2
             }
         )
 
         column SHELF (
-            type: plainText
+            type: textField
             heading {
                 heading: Shelf
             }
             layout {
                 sequence: 70
             }
+            validation {
+                maxLength: 10
+            }
             source {
-                dataType: STRING
+                databaseColumn: SHELF
+                dataType: varchar2
             }
         )
 
         column LOCATION_TYPE (
-            type: plainText
+            type: selectList
             heading {
                 heading: Location Type
             }
             layout {
                 sequence: 80
             }
+            lov {
+                type: staticValues
+                staticValues: STATIC:Receiving;RECEIVING,Pick Face;PICK_FACE,Bulk;BULK,Quarantine;QUARANTINE,Staging;STAGING,Shipping;SHIPPING
+            }
             source {
-                dataType: STRING
+                databaseColumn: LOCATION_TYPE
+                dataType: varchar2
             }
         )
 
         column IS_ACTIVE (
-            type: plainText
+            type: checkbox
             heading {
                 heading: Active
             }
@@ -274,33 +317,19 @@ page 20 (
                 sequence: 90
             }
             source {
-                dataType: STRING
+                databaseColumn: IS_ACTIVE
+                dataType: varchar2
             }
         )
     )
 
-    dynamicAction refresh-on-edit (
-        name: Refresh on Edit
+    process LOCATIONS_GRID_ARP (
+        name: Locations - Save Data
+        type: interactiveGridAutoRowProcessing
+        editableRegion: @LOCATIONS_GRID
         execution {
             sequence: 10
         }
-        when {
-            event: apexafterclosedialog
-            selectionType: region
-            region: @LOCATIONS_REPORT
-        }
-
-        action refresh-locations-report (
-            action: refresh
-            affectedElements {
-                selectionType: region
-                region: @LOCATIONS_REPORT
-            }
-            execution {
-                sequence: 10
-                fireOnInit: false
-            }
-        )
     )
 
 )

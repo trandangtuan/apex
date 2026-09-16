@@ -128,7 +128,7 @@ Nếu cần nạp dữ liệu thật từ hệ thống cũ (không phải demo):
 - URL: `http://localhost:8181/ords/r/tdt203/26house/` (hoặc rút gọn `http://localhost:8181/ords/f?p=105:1`).
 - Đăng nhập bằng tài khoản APEX workspace `tdt203`.
 - Trang chủ (Home) liệt kê menu điều hướng tới các trang chức năng chính (Items, Locations, Lots, UOM, Warehouses, Suppliers, Inventory Balance/Transactions, Inbound Receipts, Outbound Orders, Pick Tasks, Shipments, Quality Inspections/Holds, Operations Dashboard, Integration Monitor, KPI Baseline...). Menu điều hướng (sidebar) được gom theo nhóm cha-con (Master Data, Inventory, Inbound, Outbound, Quality, Reporting, Integration).
-- Các bảng có cột tham chiếu (many2one) — Items, Locations, Inbound Receipts(+Lines), Outbound Orders(+Lines), Quality Inspections/Holds — dùng mô hình **Report (danh sách, chỉ đọc) + Form (modal thêm/sửa)**: trang danh sách có ô chọn dòng + nút Edit/New mở form riêng, trong form các cột tham chiếu là dropdown thật (lọc theo bản ghi đang active), cột boolean là select Yes/No mặc định Yes. Chi tiết kỹ thuật/lý do (Interactive Grid không hỗ trợ dropdown) xem `CLAUDE.md`.
+- Mọi trang danh mục/chứng từ đều là 1 Interactive Grid duy nhất (thêm/sửa/xóa trực tiếp trong lưới). Cột tham chiếu (many2one, vd `Items.uom`, `Locations.warehouse_id`, `Outbound Orders.customer_id`...) là dropdown thật lấy từ LOV dùng chung khai báo ở `shared-components/lovs.apx`, chỉ hiện bản ghi đang active; cột boolean (vd `Active`, `Lot Tracked`) là checkbox thật ngay trong lưới.
 
 ## 6. Kiểm tra nhanh sau khi cài đặt
 

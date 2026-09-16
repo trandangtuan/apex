@@ -12,7 +12,7 @@ page 150 (
         formAutoComplete: false
     }
     help {
-        helpText: Active/released stock holds (FR-07). Select a row and click Edit to open it, or use New Hold to place one. Item, Lot and Location are selected from master lists (leave Lot/Location blank to apply the hold to every lot/location of that item). PKG_OUTBOUND.allocate_line excludes any inventory matched by an ACTIVE hold here. Prefer PKG_QUALITY.release_hold over deleting a row, so RELEASED_BY/RELEASE_DATE stay accurate.
+        helpText: Active/released stock holds (FR-07). Item, Lot and Location are selected from master lists (leave Lot/Location blank to apply the hold to every lot/location of that item). PKG_OUTBOUND.allocate_line excludes any inventory_balance row matched by an ACTIVE hold here. Creating a row here places a hold immediately; prefer PKG_QUALITY.release_hold over deleting a row, so RELEASED_BY/RELEASE_DATE stay accurate.
     }
 
     region breadcrumb (
@@ -35,107 +35,26 @@ page 150 (
         }
     )
 
-    region actions (
-        name: Actions
-        type: staticContent
-        layout {
-            sequence: 15
-            slot: BODY
-        }
-        appearance {
-            template: @/blank-with-attributes
-            templateOptions: #DEFAULT#
-        }
-    )
-
-    pageItem P150_EDIT_SELECT (
-        type: numberField
-        label {
-            label: Hold Id to Edit
-        }
-        layout {
-            sequence: 10
-            region: @actions
-            slot: regionBody
-        }
-        appearance {
-            template: @/optional-floating
-            templateOptions: #DEFAULT#
-        }
-        help {
-            helpText: Enter the Hold Id shown below, then click Edit to open it.
-        }
-    )
-
-    button edit-hold (
-        buttonName: EDIT_HOLD
-        label: Edit
-        layout {
-            sequence: 20
-            region: @actions
-            slot: regionBody
-        }
-        appearance {
-            buttonTemplate: @/text
-            templateOptions: #DEFAULT#
-        }
-        behavior {
-            action: redirectThisApp
-            target: {
-                page: 151
-                items: {
-                    P151_HOLD_ID: &P150_EDIT_SELECT.
-                }
-                clearCache: 151
-            }
-        }
-    )
-
-    button create-hold (
-        buttonName: CREATE_HOLD
-        label: New Hold
-        layout {
-            sequence: 30
-            region: @actions
-            slot: regionBody
-        }
-        appearance {
-            buttonTemplate: @/text
-            hot: true
-            templateOptions: #DEFAULT#
-        }
-        behavior {
-            action: redirectThisApp
-            target: {
-                page: 151
-                clearCache: 151
-            }
-        }
-    )
-
-    region QUALITY_HOLDS_REPORT (
+    region QUALITY_HOLDS_GRID (
         name: Quality Holds
-        type: interactiveReport
+        type: interactiveGrid
         source {
             location: localDatabase
             type: sqlQuery
             sqlQuery:
                 ```sql
                 select
-                    qh.hold_id,
-                    i.item_code,
-                    lt.lot_number,
-                    loc.location_code,
-                    qh.reason,
-                    qh.hold_date,
-                    qh.released_by,
-                    qh.release_date,
-                    qh.status
-                from quality_hold qh
-                join item i on i.item_id = qh.item_id
-                left join lot lt on lt.lot_id = qh.lot_id
-                left join location loc on loc.location_id = qh.location_id
-                order by qh.hold_id desc
+                    hold_id,
+                    item_id,
+                    lot_id,
+                    location_id,
+                    reason,
+                    hold_date,
+                    released_by,
+                    release_date,
+                    status
+                from quality_hold
+                order by hold_id desc
                 ```
         }
         layout {
@@ -143,14 +62,31 @@ page 150 (
             slot: BODY
         }
         appearance {
-            template: @/interactive-report
+            template: @/standard
             templateOptions: #DEFAULT#
         }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+            ]
+        }
         pagination {
-            type: rowRangesXToY
+            type: page
+            showTotalCount: true
         }
         messages {
             whenNoDataFound: No quality holds found.
+        }
+        toolbar {
+            controls: [
+                searchCol
+                searchField
+                actionsMenu
+                resetButton
+                saveButton
+            ]
         }
         download {
             formats: [
@@ -159,152 +95,241 @@ page 150 (
             ]
         }
 
-        column HOLD_ID (
-            type: plainText
-            heading {
-                heading: Hold Id
+        savedReport PRIMARY (
+            visibility: primary
+            view {
+                default: grid
             }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    sequence: 0
+                }
+            )
+            displayColumn (
+                column: @ITEM_ID
+                layout {
+                    sequence: 1
+                }
+            )
+            displayColumn (
+                column: @LOT_ID
+                layout {
+                    sequence: 2
+                }
+            )
+            displayColumn (
+                column: @LOCATION_ID
+                layout {
+                    sequence: 3
+                }
+            )
+            displayColumn (
+                column: @REASON
+                layout {
+                    sequence: 4
+                }
+            )
+            displayColumn (
+                column: @HOLD_DATE
+                layout {
+                    sequence: 5
+                }
+            )
+            displayColumn (
+                column: @RELEASED_BY
+                layout {
+                    sequence: 6
+                }
+            )
+            displayColumn (
+                column: @RELEASE_DATE
+                layout {
+                    sequence: 7
+                }
+            )
+            displayColumn (
+                column: @STATUS
+                layout {
+                    sequence: 8
+                }
+            )
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
             layout {
-                sequence: 10
-            }
-            source {
-                dataType: NUMBER
+                sequence: 5
             }
         )
 
-        column ITEM_CODE (
-            type: plainText
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+        )
+
+        column HOLD_ID (
+            type: hidden
+            layout {
+                sequence: 15
+            }
+            source {
+                databaseColumn: HOLD_ID
+                dataType: number
+                primaryKey: true
+            }
+        )
+
+        column ITEM_ID (
+            type: selectList
             heading {
                 heading: Item
             }
             layout {
                 sequence: 20
             }
+            lov {
+                type: sharedComponent
+                lov: @item-active
+            }
             source {
-                dataType: STRING
+                databaseColumn: ITEM_ID
+                dataType: number
             }
         )
 
-        column LOT_NUMBER (
-            type: plainText
+        column LOT_ID (
+            type: selectList
             heading {
                 heading: Lot
             }
             layout {
                 sequence: 30
             }
+            lov {
+                type: sharedComponent
+                lov: @lot-any
+                displayExtraValues: true
+            }
             source {
-                dataType: STRING
+                databaseColumn: LOT_ID
+                dataType: number
             }
         )
 
-        column LOCATION_CODE (
-            type: plainText
+        column LOCATION_ID (
+            type: selectList
             heading {
                 heading: Location
             }
             layout {
                 sequence: 40
             }
+            lov {
+                type: sharedComponent
+                lov: @location-active
+                displayExtraValues: true
+            }
             source {
-                dataType: STRING
+                databaseColumn: LOCATION_ID
+                dataType: number
             }
         )
 
         column REASON (
-            type: plainText
+            type: textField
             heading {
                 heading: Reason
             }
             layout {
                 sequence: 50
             }
+            validation {
+                maxLength: 200
+            }
             source {
-                dataType: STRING
+                databaseColumn: REASON
+                dataType: varchar2
             }
         )
 
         column HOLD_DATE (
-            type: plainText
+            type: datePicker
             heading {
                 heading: Hold Date
             }
             layout {
                 sequence: 60
             }
-            appearance {
-                formatMask: DD-MON-YYYY
-            }
             source {
-                dataType: DATE
+                databaseColumn: HOLD_DATE
+                dataType: date
             }
         )
 
         column RELEASED_BY (
-            type: plainText
+            type: textField
             heading {
                 heading: Released By
             }
             layout {
                 sequence: 70
             }
+            validation {
+                maxLength: 60
+            }
             source {
-                dataType: STRING
+                databaseColumn: RELEASED_BY
+                dataType: varchar2
             }
         )
 
         column RELEASE_DATE (
-            type: plainText
+            type: datePicker
             heading {
                 heading: Release Date
             }
             layout {
                 sequence: 80
             }
-            appearance {
-                formatMask: DD-MON-YYYY
-            }
             source {
-                dataType: DATE
+                databaseColumn: RELEASE_DATE
+                dataType: date
             }
         )
 
         column STATUS (
-            type: plainText
+            type: selectList
             heading {
                 heading: Status
             }
             layout {
                 sequence: 90
             }
+            lov {
+                type: staticValues
+                staticValues: STATIC:Active;ACTIVE,Released;RELEASED
+            }
             source {
-                dataType: STRING
+                databaseColumn: STATUS
+                dataType: varchar2
             }
         )
     )
 
-    dynamicAction refresh-on-edit (
-        name: Refresh on Edit
+    process QUALITY_HOLDS_GRID_ARP (
+        name: Quality Holds - Save Data
+        type: interactiveGridAutoRowProcessing
+        editableRegion: @QUALITY_HOLDS_GRID
         execution {
             sequence: 10
         }
-        when {
-            event: apexafterclosedialog
-            selectionType: region
-            region: @QUALITY_HOLDS_REPORT
-        }
-
-        action refresh-quality-holds-report (
-            action: refresh
-            affectedElements {
-                selectionType: region
-                region: @QUALITY_HOLDS_REPORT
-            }
-            execution {
-                sequence: 10
-                fireOnInit: false
-            }
-        )
     )
 
 )
