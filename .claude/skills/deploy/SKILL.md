@@ -47,7 +47,16 @@ cp -r pages shared-components deployments .apex "$CLEAN/"
 ```bash
 node apexlang/tools/apexctl.mjs apexlang validate --app-path .
 ```
-Known false positives already accepted on this project (do not try to "fix" these): `lov {}` and `masterDetail {}` / `default {}` on Interactive Grid columns report `DSL_RULE_BLOCK` locally but pass live. Treat local-check failures as advisory — the live roundtrip in step 5 is authoritative. Only stop here if the failure is something you don't already recognize from `CLAUDE.md`.
+Known false positives already accepted on this project (do not try to "fix" these): `lov {}` and `masterDetail {}` / `default {}` on Interactive Grid columns, and `IR_CONTEXT_BIND_SUBMIT_REQUIRED_001` on an Interactive Report that already declares `source.pageItemsToSubmit`, all report locally but pass live. Treat local-check failures as advisory — the live roundtrip in step 5 is authoritative. Only stop here if the failure is something you don't already recognize from `CLAUDE.md`.
+
+**Trying a component type/property not seen before in this repo?** Don't experiment against the real app. Write a throwaway single-page `.apx` file, copy it into a disposable clean-app-copy (or just add it alongside the real pages in `/tmp/26house-clean-app`), and run a dry-run compile check with no import side effect:
+```bash
+sql -S /nolog <<'EOF'
+connect -name wms_remote
+apex validate -input <path-to-clean-copy-or-file> -workspaceid 2313406132176276
+EOF
+```
+This is a real SQLcl subcommand distinct from `apex import` — it compiles against the live engine but never touches the target application. Iterate here until `Validation successful.`, then apply the confirmed-good syntax to the real page and remove the scratch file. Used this to confirm `type: qrCode` on a pageItem (see `CLAUDE.md`) without risking app 100.
 
 ## 5A. Live validate + import — local dev target
 

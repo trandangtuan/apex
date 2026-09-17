@@ -338,7 +338,7 @@ page 111 (
     )
 
     pageItem P111_SCANNED_CODE (
-        type: textField
+        type: qrCode
         label {
             label: Scan Barcode / QR
             alignment: left
@@ -347,7 +347,6 @@ page 111 (
             sequence: 20
             region: @SCAN_TO_PICK
             slot: regionBody
-            alignment: left
             startNewRow: false
             columnSpan: 6
         }
@@ -355,11 +354,8 @@ page 111 (
             template: @/optional-floating
             templateOptions: #DEFAULT#
         }
-        validation {
-            maxLength: 128
-        }
         help {
-            helpText: Enter Qty Picked above, then scan (or type) the item's barcode/QR code here and press Enter. A mismatch against this task's expected item is rejected before any stock moves.
+            helpText: Enter Qty Picked above, then tap the camera icon to scan the item's barcode/QR code (or type it) and press Enter. A mismatch against this task's expected item is rejected before any stock moves.
         }
     )
 

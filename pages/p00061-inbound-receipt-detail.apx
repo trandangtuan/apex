@@ -272,7 +272,7 @@ page 61 (
     )
 
     pageItem P61_SCAN_CODE (
-        type: textField
+        type: qrCode
         label {
             label: Scan / Enter Item Code
             alignment: left
@@ -281,17 +281,13 @@ page 61 (
             sequence: 10
             region: @QUICK_ADD_LINE
             slot: regionBody
-            alignment: left
         }
         appearance {
             template: @/optional-floating
             templateOptions: #DEFAULT#
         }
-        validation {
-            maxLength: 128
-        }
         help {
-            helpText: Scan the item's barcode/QR code (or type its item code) and press Enter. If a pending line for this item already exists on this receipt, its expected quantity goes up by 1 instead of adding a duplicate line; otherwise a new line is added with expected quantity 1. Matches ITEM.item_code, ITEM.barcode_value, or ITEM.qr_value for active items. Edit quantity, lot, or putaway location in the grid below afterward.
+            helpText: Tap the camera icon to scan the item's barcode/QR code, or type its item code, and press Enter. If a pending line for this item already exists on this receipt, its expected quantity goes up by 1 instead of adding a duplicate line; otherwise a new line is added with expected quantity 1. Matches ITEM.item_code, ITEM.barcode_value, or ITEM.qr_value for active items. Edit quantity, lot, or putaway location in the grid below afterward.
         }
     )
 
