@@ -175,10 +175,14 @@ page 91 (
     )
 
     pageItem P91_ORDER_SOURCE (
-        type: textField
+        type: selectList
         label {
             label: Order Source
             alignment: left
+        }
+        lov {
+            type: staticValues
+            staticValues: STATIC:Manual;MANUAL,E-Shop API;ESHOP_API,EDI;EDI
         }
         layout {
             sequence: 50
@@ -192,16 +196,13 @@ page 91 (
             template: @/optional-floating
             templateOptions: #DEFAULT#
         }
-        validation {
-            maxLength: 20
-        }
         source {
             formRegion: @HEADER_FORM
             column: ORDER_SOURCE
             dataType: varchar2
         }
         help {
-            helpText: Where this order originated (e.g. web, EDI, manual).
+            helpText: Where this order originated.
         }
     )
 
@@ -261,10 +262,14 @@ page 91 (
     )
 
     pageItem P91_PRIORITY (
-        type: textField
+        type: selectList
         label {
             label: Priority
             alignment: left
+        }
+        lov {
+            type: staticValues
+            staticValues: STATIC:Low;LOW,Normal;NORMAL,High;HIGH,Urgent;URGENT
         }
         layout {
             sequence: 80
@@ -277,16 +282,13 @@ page 91 (
             template: @/optional-floating
             templateOptions: #DEFAULT#
         }
-        validation {
-            maxLength: 10
-        }
         source {
             formRegion: @HEADER_FORM
             column: PRIORITY
             dataType: varchar2
         }
         help {
-            helpText: Optional priority marker for this order (e.g. HIGH, LOW).
+            helpText: Priority for this order.
         }
     )
 
@@ -519,7 +521,7 @@ page 91 (
         )
 
         column QTY_ALLOCATED (
-            type: numberField
+            type: displayOnly
             heading {
                 heading: Qty Allocated
                 alignment: end
@@ -535,7 +537,7 @@ page 91 (
         )
 
         column QTY_PICKED (
-            type: numberField
+            type: displayOnly
             heading {
                 heading: Qty Picked
                 alignment: end
@@ -551,7 +553,7 @@ page 91 (
         )
 
         column QTY_SHIPPED (
-            type: numberField
+            type: displayOnly
             heading {
                 heading: Qty Shipped
                 alignment: end
@@ -567,16 +569,12 @@ page 91 (
         )
 
         column STATUS (
-            type: selectList
+            type: displayOnly
             heading {
                 heading: Status
             }
             layout {
                 sequence: 70
-            }
-            lov {
-                type: staticValues
-                staticValues: STATIC:Pending;PENDING,Allocated;ALLOCATED,Picked;PICKED,Short;SHORT,Cancelled;CANCELLED
             }
             source {
                 databaseColumn: STATUS
