@@ -12,7 +12,7 @@ page 61 (
         formAutoComplete: false
     }
     help {
-        helpText: Inbound receipt header and lines (FR-02). Create or edit the header, then add/edit lines below (item, lot, expected qty, putaway location). Putaway Location only lists PICK_FACE/BULK bins -- picking RECEIVING/SHIPPING there would leave the stock stuck at the dock even after Confirm. Header status: EXPECTED on create, RECEIVING after Confirm, COMPLETED after Done. Confirm receives every pending line into inventory (and puts it away if a putaway location is already set on the line); Done finalizes the receipt once every line is putaway or cancelled.
+        helpText: Inbound receipt header and lines (FR-02). Create or edit the header, then add/edit lines below (item, lot, expected qty, putaway location). Putaway Location only lists PICK_FACE/BULK bins -- picking RECEIVING/SHIPPING there would leave the stock stuck at the dock even after Confirm. Received Qty and line Status are read-only, maintained only by PKG_INBOUND via Confirm/Done. Header status: EXPECTED on create, RECEIVING after Confirm, COMPLETED after Done. Confirm receives every pending line into inventory (and puts it away if a putaway location is already set on the line); Done finalizes the receipt once every line is putaway or cancelled.
     }
 
     region breadcrumb (
@@ -620,7 +620,7 @@ page 61 (
         )
 
         column RECEIVED_QTY (
-            type: numberField
+            type: displayOnly
             heading {
                 heading: Received Qty
                 alignment: end
@@ -628,6 +628,10 @@ page 61 (
             layout {
                 sequence: 50
                 columnAlignment: end
+            }
+            default {
+                type: static
+                staticValue: 0
             }
             source {
                 databaseColumn: RECEIVED_QTY
@@ -655,16 +659,16 @@ page 61 (
         )
 
         column STATUS (
-            type: selectList
+            type: displayOnly
             heading {
                 heading: Status
             }
             layout {
                 sequence: 70
             }
-            lov {
-                type: staticValues
-                staticValues: STATIC:Pending;PENDING,Received;RECEIVED,Putaway;PUTAWAY,Short;SHORT,Cancelled;CANCELLED
+            default {
+                type: static
+                staticValue: PENDING
             }
             source {
                 databaseColumn: STATUS
