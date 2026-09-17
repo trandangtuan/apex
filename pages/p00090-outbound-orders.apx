@@ -12,7 +12,7 @@ page 90 (
         formAutoComplete: false
     }
     help {
-        helpText: Outbound order headers (FR-04). Customer and Warehouse are selected from active master lists. STATUS moves through received/allocated/picking/picked/packed/shipped automatically via PKG_OUTBOUND/PKG_PICKING/PKG_PACKING/PKG_SHIPMENT, not by direct edit.
+        helpText: Outbound order headers (FR-04). Customer and Warehouse are selected from active master lists. STATUS moves through received/allocated/picking/picked/packed/shipped automatically via PKG_OUTBOUND/PKG_PICKING/PKG_PACKING/PKG_SHIPMENT, not by direct edit. Use Pack Order below once every line of an order is PICKED.
     }
 
     region breadcrumb (
@@ -327,6 +327,122 @@ page 90 (
         editableRegion: @OUTBOUND_ORDERS_GRID
         execution {
             sequence: 10
+        }
+    )
+
+    region PACK_ORDER (
+        name: Pack Order
+        type: staticContent
+        layout {
+            sequence: 30
+            slot: BODY
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P90_PACK_ORDER_ID (
+        type: selectList
+        label {
+            label: Order (fully picked)
+            alignment: left
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select order_number as d, order_id as r
+                  from outbound_order
+                 where status = 'PICKED'
+                 order by order_id desc
+                ```
+        }
+        layout {
+            sequence: 10
+            region: @PACK_ORDER
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        help {
+            helpText: Only orders with every line PICKED are listed. Packing builds package lines from the picked pick tasks and moves the order to PACKED.
+        }
+    )
+
+    region PACK_BUTTONS (
+        name: Pack Buttons
+        type: staticContent
+        layout {
+            sequence: 31
+            slot: BODY
+        }
+        appearance {
+            template: @/buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    button PACK_ORDER_BTN (
+        buttonName: PACK_ORDER_BTN
+        label: Pack Order
+        layout {
+            sequence: 10
+            region: @PACK_BUTTONS
+            slot: NEXT
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: submitPage
+            requiresConfirmation: true
+            warnOnUnsavedChanges: doNotCheck
+        }
+        confirmation {
+            message: Pack this order? This builds package lines from the picked pick tasks and moves the order to PACKED.
+            style: warning
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P90_PACK_ORDER_ID
+        }
+    )
+
+    process pack-order-proc (
+        name: Pack Order
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                declare
+                    l_package_id ship_package.package_id%type;
+                begin
+                    l_package_id := pkg_packing.pack_order(p_order_id => :P90_PACK_ORDER_ID);
+                    :P90_PACK_ORDER_ID := null;
+                exception
+                    when others then
+                        apex_error.add_error(
+                            p_message          => sqlerrm,
+                            p_display_location => apex_error.c_inline_in_notification
+                        );
+                end;
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        successMessage {
+            successMessage: Order packed successfully.
+        }
+        serverSideCondition {
+            whenButtonPressed: @PACK_ORDER_BTN
         }
     )
 

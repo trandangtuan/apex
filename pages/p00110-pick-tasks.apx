@@ -12,7 +12,7 @@ page 110 (
         formAutoComplete: false
     }
     help {
-        helpText: Read-only pick queue (FR-03, FR-05), sequenced by SEQUENCE_NO (pick path order within an order line). Confirming a pick (barcode/QR scan) must go through PKG_PICKING.confirm_pick so inventory moves correctly; this report does not allow direct edits.
+        helpText: Pick queue (FR-03, FR-05), sequenced by SEQUENCE_NO (pick path order within an order line). Select the task below, scan the item's barcode/QR (or type its code) and press Enter to confirm the pick via PKG_PICKING.confirm_pick -- a wrong-item scan is rejected before any stock moves. This report does not allow direct edits.
     }
 
     region breadcrumb (
@@ -87,7 +87,7 @@ page 110 (
         }
 
         column TASK_ID (
-            type: hidden
+            type: plainText
             heading {
                 heading: Task Id
             }
@@ -245,6 +245,195 @@ page 110 (
             }
             source {
                 dataType: STRING
+            }
+        )
+    )
+
+    region SCAN_TO_PICK (
+        name: Scan to Pick
+        type: staticContent
+        layout {
+            sequence: 30
+            slot: BODY
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P110_TASK_ID (
+        type: selectList
+        label {
+            label: Task
+            alignment: left
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select o.order_number || ' - ' || i.item_code || ' (' ||
+                       (t.qty_requested - t.qty_picked) || ' left, seq ' || t.sequence_no || ')' as d,
+                       t.task_id as r
+                  from pick_task t
+                  join outbound_order_line ol on ol.line_id = t.order_line_id
+                  join outbound_order o on o.order_id = ol.order_id
+                  join item i on i.item_id = t.item_id
+                 where t.status in ('PENDING', 'ASSIGNED', 'IN_PROGRESS')
+                 order by o.order_id desc, t.sequence_no
+                ```
+        }
+        layout {
+            sequence: 10
+            region: @SCAN_TO_PICK
+            slot: regionBody
+            alignment: left
+            columnSpan: 6
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        help {
+            helpText: Open pick task to confirm (only PENDING/ASSIGNED/IN_PROGRESS tasks are listed).
+        }
+    )
+
+    pageItem P110_QTY_PICKED (
+        type: numberField
+        label {
+            label: Qty Picked
+            alignment: left
+        }
+        layout {
+            sequence: 20
+            region: @SCAN_TO_PICK
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+            columnSpan: 6
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        help {
+            helpText: Quantity actually picked for the selected task. Cannot exceed the remaining requested quantity.
+        }
+    )
+
+    pageItem P110_SCANNED_CODE (
+        type: textField
+        label {
+            label: Scan Barcode / QR
+            alignment: left
+        }
+        layout {
+            sequence: 30
+            region: @SCAN_TO_PICK
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 128
+        }
+        help {
+            helpText: Select the task and enter the Qty Picked above, then scan (or type) the item's barcode/QR code here and press Enter. A mismatch against the task's expected item is rejected before any stock moves.
+        }
+    )
+
+    dynamicAction DA_CONFIRM_PICK (
+        name: Confirm Pick on Scan
+        execution {
+            sequence: 10
+        }
+        when {
+            event: keydown
+            selectionType: items
+            items: [
+                P110_SCANNED_CODE
+            ]
+        }
+        clientSideCondition {
+            type: jsExpression
+            javaScriptExpression: this.browserEvent.which === 13
+        }
+
+        action confirm-pick-call (
+            action: executeServerSideCode
+            settings {
+                itemsToSubmit: [
+                    P110_TASK_ID
+                    P110_QTY_PICKED
+                    P110_SCANNED_CODE
+                ]
+                plsqlCode:
+                    ```plsql
+                    begin
+                        if :P110_TASK_ID is null then
+                            apex_error.add_error(
+                                p_message          => 'Select a task before scanning.',
+                                p_display_location => apex_error.c_inline_in_notification
+                            );
+                            return;
+                        end if;
+
+                        if :P110_QTY_PICKED is null or to_number(:P110_QTY_PICKED) <= 0 then
+                            apex_error.add_error(
+                                p_message          => 'Enter a Qty Picked greater than zero.',
+                                p_display_location => apex_error.c_inline_in_notification
+                            );
+                            return;
+                        end if;
+
+                        begin
+                            pkg_picking.confirm_pick(
+                                p_task_id      => :P110_TASK_ID,
+                                p_scanned_code => :P110_SCANNED_CODE,
+                                p_qty_picked   => to_number(:P110_QTY_PICKED)
+                            );
+                        exception
+                            when others then
+                                apex_error.add_error(
+                                    p_message          => sqlerrm,
+                                    p_display_location => apex_error.c_inline_in_notification
+                                );
+                        end;
+                    end;
+                    ```
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+        action confirm-pick-refresh-report (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @PICK_TASKS_REPORT
+            }
+            execution {
+                sequence: 20
+            }
+        )
+
+        action confirm-pick-clear-and-refocus (
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript
+                    apex.item("P110_SCANNED_CODE").setValue("");
+                    apex.item("P110_QTY_PICKED").setValue("");
+                    apex.item("P110_SCANNED_CODE").setFocus();
+                    ```
+            }
+            execution {
+                sequence: 30
             }
         )
     )

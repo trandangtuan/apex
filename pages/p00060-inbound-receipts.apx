@@ -12,7 +12,7 @@ page 60 (
         formAutoComplete: false
     }
     help {
-        helpText: Inbound receipt headers and lines (FR-02). Select a receipt row above to see/edit its lines below (one receipt can have many lines); new lines are automatically linked to the selected receipt. Supplier and Warehouse are selected from active master lists. Business logic (receive, putaway, complete) runs through PKG_INBOUND, not direct edits to STATUS.
+        helpText: Inbound receipt headers (FR-02). Click a row's detail icon to open the receipt, manage its lines, and receive/putaway/complete it. Use New Receipt to create one.
     }
 
     region breadcrumb (
@@ -35,24 +35,27 @@ page 60 (
         }
     )
 
-    region INBOUND_RECEIPTS_GRID (
+    region INBOUND_RECEIPTS_IR (
         name: Inbound Receipts
-        type: interactiveGrid
+        type: interactiveReport
         source {
             location: localDatabase
             type: sqlQuery
             sqlQuery:
                 ```sql
                 select
-                    receipt_id,
-                    supplier_id,
-                    po_reference,
-                    warehouse_id,
-                    expected_date,
-                    status,
-                    received_by
-                from inbound_receipt
-                order by receipt_id desc
+                    r.receipt_id,
+                    s.supplier_name,
+                    r.po_reference,
+                    w.warehouse_name,
+                    r.expected_date,
+                    r.status,
+                    r.received_by,
+                    (select count(*) from inbound_receipt_line l where l.receipt_id = r.receipt_id) as line_count
+                from inbound_receipt r
+                join warehouse w on w.warehouse_id = r.warehouse_id
+                left join supplier s on s.supplier_id = r.supplier_id
+                order by r.receipt_id desc
                 ```
         }
         layout {
@@ -60,33 +63,26 @@ page 60 (
             slot: BODY
         }
         appearance {
-            template: @/standard
+            template: @/interactive-report
             templateOptions: #DEFAULT#
         }
-        edit {
-            enabled: true
-            allowedOperations: [
-                add
-                update
-                delete
-            ]
+        link {
+            linkColumn: customTarget
+            target: {
+                page: 61
+                items: {
+                    P61_RECEIPT_ID: #RECEIPT_ID#
+                }
+                clearCache: 61
+            }
+            linkIcon: <span role="img" aria-label="Detail" class="fa fa-search-plus" title="View Detail"></span>
         }
         pagination {
-            type: page
-            showTotalCount: true
+            type: rowRangesXToY
         }
         messages {
             whenNoDataFound: No inbound receipts found.
         }
-        toolbar {
-            controls: [
-                searchCol
-                searchField
-                actionsMenu
-                resetButton
-                saveButton
-            ]
-        }
         download {
             formats: [
                 csv
@@ -94,481 +90,140 @@ page 60 (
             ]
         }
 
-        savedReport PRIMARY (
-            visibility: primary
-            view {
-                default: grid
-            }
-            singleRowView {
-                displayedColumns: true
-            }
-
-            displayColumn (
-                column: @APEX$ROW_ACTION
-                layout {
-                    sequence: 0
-                }
-            )
-            displayColumn (
-                column: @RECEIPT_ID
-                layout {
-                    sequence: 1
-                }
-            )
-            displayColumn (
-                column: @SUPPLIER_ID
-                layout {
-                    sequence: 2
-                }
-            )
-            displayColumn (
-                column: @PO_REFERENCE
-                layout {
-                    sequence: 3
-                }
-            )
-            displayColumn (
-                column: @WAREHOUSE_ID
-                layout {
-                    sequence: 4
-                }
-            )
-            displayColumn (
-                column: @EXPECTED_DATE
-                layout {
-                    sequence: 5
-                }
-            )
-            displayColumn (
-                column: @STATUS
-                layout {
-                    sequence: 6
-                }
-            )
-            displayColumn (
-                column: @RECEIVED_BY
-                layout {
-                    sequence: 7
-                }
-            )
-        )
-
-        column APEX$ROW_ACTION (
-            type: actionsMenu
-            layout {
-                sequence: 5
-            }
-        )
-
-        column APEX$ROW_SELECTOR (
-            type: rowSelector
-            layout {
-                sequence: 10
-            }
-        )
-
         column RECEIPT_ID (
-            type: numberField
+            type: hidden
             heading {
                 heading: Receipt Id
             }
             layout {
-                sequence: 20
+                sequence: 10
             }
             source {
-                databaseColumn: RECEIPT_ID
-                dataType: number
-                primaryKey: true
+                dataType: NUMBER
             }
         )
 
-        column SUPPLIER_ID (
-            type: selectList
+        column SUPPLIER_NAME (
+            type: plainText
             heading {
                 heading: Supplier
             }
             layout {
-                sequence: 30
-            }
-            lov {
-                type: sharedComponent
-                lov: @supplier-active
+                sequence: 20
             }
             source {
-                databaseColumn: SUPPLIER_ID
-                dataType: number
+                dataType: STRING
             }
         )
 
         column PO_REFERENCE (
-            type: textField
+            type: plainText
             heading {
                 heading: PO Reference
             }
             layout {
-                sequence: 40
-            }
-            validation {
-                maxLength: 40
+                sequence: 30
             }
             source {
-                databaseColumn: PO_REFERENCE
-                dataType: varchar2
+                dataType: STRING
             }
         )
 
-        column WAREHOUSE_ID (
-            type: selectList
+        column WAREHOUSE_NAME (
+            type: plainText
             heading {
                 heading: Warehouse
             }
             layout {
-                sequence: 50
-            }
-            lov {
-                type: sharedComponent
-                lov: @warehouse-active
+                sequence: 40
             }
             source {
-                databaseColumn: WAREHOUSE_ID
-                dataType: number
+                dataType: STRING
             }
         )
 
         column EXPECTED_DATE (
-            type: datePicker
+            type: plainText
             heading {
                 heading: Expected Date
             }
             layout {
-                sequence: 60
+                sequence: 50
+            }
+            appearance {
+                formatMask: DD-MON-YYYY
             }
             source {
-                databaseColumn: EXPECTED_DATE
-                dataType: date
+                dataType: DATE
             }
         )
 
         column STATUS (
-            type: selectList
+            type: plainText
             heading {
                 heading: Status
             }
             layout {
-                sequence: 70
-            }
-            lov {
-                type: staticValues
-                staticValues: STATIC:Expected;EXPECTED,Receiving;RECEIVING,Completed;COMPLETED,Closed;CLOSED
+                sequence: 60
             }
             source {
-                databaseColumn: STATUS
-                dataType: varchar2
+                dataType: STRING
             }
         )
 
         column RECEIVED_BY (
-            type: textField
+            type: plainText
             heading {
                 heading: Received By
             }
             layout {
-                sequence: 80
-            }
-            validation {
-                maxLength: 60
-            }
-            source {
-                databaseColumn: RECEIVED_BY
-                dataType: varchar2
-            }
-        )
-    )
-
-    region INBOUND_RECEIPT_LINES_GRID (
-        name: Inbound Receipt Lines
-        type: interactiveGrid
-        source {
-            location: localDatabase
-            type: sqlQuery
-            sqlQuery:
-                ```sql
-                select
-                    line_id,
-                    receipt_id,
-                    item_id,
-                    lot_id,
-                    expected_qty,
-                    received_qty,
-                    putaway_location_id,
-                    status
-                from inbound_receipt_line
-                order by line_id
-                ```
-        }
-        layout {
-            sequence: 30
-            slot: BODY
-        }
-        appearance {
-            template: @/standard
-            templateOptions: #DEFAULT#
-        }
-        edit {
-            enabled: true
-            allowedOperations: [
-                add
-                update
-                delete
-            ]
-        }
-        masterDetail {
-            masterRegion: @INBOUND_RECEIPTS_GRID
-        }
-        pagination {
-            type: page
-            showTotalCount: true
-        }
-        messages {
-            whenNoDataFound: No lines for the selected receipt. Select a receipt above, then add a line here.
-        }
-        toolbar {
-            controls: [
-                searchCol
-                searchField
-                actionsMenu
-                resetButton
-                saveButton
-            ]
-        }
-        download {
-            formats: [
-                csv
-                excel
-            ]
-        }
-
-        savedReport PRIMARY (
-            visibility: primary
-            view {
-                default: grid
-            }
-            singleRowView {
-                displayedColumns: true
-            }
-
-            displayColumn (
-                column: @APEX$ROW_ACTION
-                layout {
-                    sequence: 0
-                }
-            )
-            displayColumn (
-                column: @LINE_ID
-                layout {
-                    sequence: 1
-                }
-            )
-            displayColumn (
-                column: @ITEM_ID
-                layout {
-                    sequence: 2
-                }
-            )
-            displayColumn (
-                column: @LOT_ID
-                layout {
-                    sequence: 3
-                }
-            )
-            displayColumn (
-                column: @EXPECTED_QTY
-                layout {
-                    sequence: 4
-                }
-            )
-            displayColumn (
-                column: @RECEIVED_QTY
-                layout {
-                    sequence: 5
-                }
-            )
-            displayColumn (
-                column: @PUTAWAY_LOCATION_ID
-                layout {
-                    sequence: 6
-                }
-            )
-            displayColumn (
-                column: @STATUS
-                layout {
-                    sequence: 7
-                }
-            )
-        )
-
-        column APEX$ROW_ACTION (
-            type: actionsMenu
-            layout {
-                sequence: 5
-            }
-        )
-
-        column APEX$ROW_SELECTOR (
-            type: rowSelector
-            layout {
-                sequence: 10
-            }
-        )
-
-        column LINE_ID (
-            type: hidden
-            layout {
-                sequence: 15
-            }
-            source {
-                databaseColumn: LINE_ID
-                dataType: number
-                primaryKey: true
-            }
-        )
-
-        column LINE_RECEIPT_ID (
-            type: hidden
-            layout {
-                sequence: 16
-            }
-            masterDetail {
-                masterColumn: @RECEIPT_ID
-            }
-            source {
-                databaseColumn: RECEIPT_ID
-                dataType: number
-            }
-        )
-
-        column ITEM_ID (
-            type: selectList
-            heading {
-                heading: Item
-            }
-            layout {
-                sequence: 20
-            }
-            lov {
-                type: sharedComponent
-                lov: @item-active
-            }
-            source {
-                databaseColumn: ITEM_ID
-                dataType: number
-            }
-        )
-
-        column LOT_ID (
-            type: selectList
-            heading {
-                heading: Lot
-            }
-            layout {
-                sequence: 30
-            }
-            lov {
-                type: sharedComponent
-                lov: @lot-any
-                displayExtraValues: true
-            }
-            source {
-                databaseColumn: LOT_ID
-                dataType: number
-            }
-        )
-
-        column EXPECTED_QTY (
-            type: numberField
-            heading {
-                heading: Expected Qty
-                alignment: end
-            }
-            layout {
-                sequence: 40
-                columnAlignment: end
-            }
-            source {
-                databaseColumn: EXPECTED_QTY
-                dataType: number
-            }
-        )
-
-        column RECEIVED_QTY (
-            type: numberField
-            heading {
-                heading: Received Qty
-                alignment: end
-            }
-            layout {
-                sequence: 50
-                columnAlignment: end
-            }
-            source {
-                databaseColumn: RECEIVED_QTY
-                dataType: number
-            }
-        )
-
-        column PUTAWAY_LOCATION_ID (
-            type: selectList
-            heading {
-                heading: Putaway Location
-            }
-            layout {
-                sequence: 60
-            }
-            lov {
-                type: sharedComponent
-                lov: @location-active
-                displayExtraValues: true
-            }
-            source {
-                databaseColumn: PUTAWAY_LOCATION_ID
-                dataType: number
-            }
-        )
-
-        column STATUS (
-            type: selectList
-            heading {
-                heading: Status
-            }
-            layout {
                 sequence: 70
             }
-            lov {
-                type: staticValues
-                staticValues: STATIC:Pending;PENDING,Received;RECEIVED,Putaway;PUTAWAY,Short;SHORT,Cancelled;CANCELLED
+            source {
+                dataType: STRING
+            }
+        )
+
+        column LINE_COUNT (
+            type: plainText
+            heading {
+                heading: Lines
+                alignment: end
+            }
+            layout {
+                sequence: 80
+                columnAlignment: end
             }
             source {
-                databaseColumn: STATUS
-                dataType: varchar2
+                dataType: NUMBER
             }
         )
     )
 
-    process INBOUND_RECEIPTS_GRID_ARP (
-        name: Inbound Receipts - Save Data
-        type: interactiveGridAutoRowProcessing
-        editableRegion: @INBOUND_RECEIPTS_GRID
-        execution {
+    button NEW_RECEIPT (
+        buttonName: NEW_RECEIPT
+        label: New Receipt
+        layout {
             sequence: 10
+            region: @INBOUND_RECEIPTS_IR
+            slot: RIGHT_OF_IR_SEARCH_BAR
         }
-    )
-
-    process INBOUND_RECEIPT_LINES_GRID_ARP (
-        name: Inbound Receipt Lines - Save Data
-        type: interactiveGridAutoRowProcessing
-        editableRegion: @INBOUND_RECEIPT_LINES_GRID
-        execution {
-            sequence: 20
+        appearance {
+            buttonTemplate: @/text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+            icon: fa-plus
+            hot: true
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 61
+                clearCache: 61
+            }
+            warnOnUnsavedChanges: doNotCheck
         }
     )
 

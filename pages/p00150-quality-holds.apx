@@ -12,7 +12,7 @@ page 150 (
         formAutoComplete: false
     }
     help {
-        helpText: Active/released stock holds (FR-07). Item, Lot and Location are selected from master lists (leave Lot/Location blank to apply the hold to every lot/location of that item). PKG_OUTBOUND.allocate_line excludes any inventory_balance row matched by an ACTIVE hold here. Creating a row here places a hold immediately; prefer PKG_QUALITY.release_hold over deleting a row, so RELEASED_BY/RELEASE_DATE stay accurate.
+        helpText: Active/released stock holds (FR-07), read-only report. Use Place Hold below to hold an item/lot/location (leave Lot/Location blank to apply to every lot/location of that item) via PKG_QUALITY.place_hold, and Release Hold to release one via PKG_QUALITY.release_hold. PKG_OUTBOUND.allocate_line excludes any inventory_balance row matched by an ACTIVE hold here.
     }
 
     region breadcrumb (
@@ -65,13 +65,6 @@ page 150 (
             template: @/standard
             templateOptions: #DEFAULT#
         }
-        edit {
-            enabled: true
-            allowedOperations: [
-                add
-                update
-            ]
-        }
         pagination {
             type: page
             showTotalCount: true
@@ -85,7 +78,6 @@ page 150 (
                 searchField
                 actionsMenu
                 resetButton
-                saveButton
             ]
         }
         download {
@@ -323,12 +315,322 @@ page 150 (
         )
     )
 
-    process QUALITY_HOLDS_GRID_ARP (
-        name: Quality Holds - Save Data
-        type: interactiveGridAutoRowProcessing
-        editableRegion: @QUALITY_HOLDS_GRID
-        execution {
+    region PLACE_HOLD (
+        name: Place Hold
+        type: staticContent
+        layout {
+            sequence: 30
+            slot: BODY
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P150_HOLD_ITEM_ID (
+        type: selectList
+        label {
+            label: Item
+            alignment: left
+        }
+        lov {
+            type: sharedComponent
+            lov: @item-active
+        }
+        layout {
             sequence: 10
+            region: @PLACE_HOLD
+            slot: regionBody
+            alignment: left
+            columnSpan: 6
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        help {
+            helpText: Item to place on hold. Only active items are listed.
+        }
+    )
+
+    pageItem P150_HOLD_LOT_ID (
+        type: selectList
+        label {
+            label: Lot (optional)
+            alignment: left
+        }
+        lov {
+            type: sharedComponent
+            lov: @lot-any
+            displayExtraValues: true
+        }
+        layout {
+            sequence: 20
+            region: @PLACE_HOLD
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+            columnSpan: 6
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        help {
+            helpText: Leave blank to hold every lot of the item; select one to hold only that lot.
+        }
+    )
+
+    pageItem P150_HOLD_LOCATION_ID (
+        type: selectList
+        label {
+            label: Location (optional)
+            alignment: left
+        }
+        lov {
+            type: sharedComponent
+            lov: @location-active
+            displayExtraValues: true
+        }
+        layout {
+            sequence: 30
+            region: @PLACE_HOLD
+            slot: regionBody
+            alignment: left
+            columnSpan: 6
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        help {
+            helpText: Leave blank to hold every location of the item; select one to hold only that location.
+        }
+    )
+
+    pageItem P150_HOLD_REASON (
+        type: textField
+        label {
+            label: Reason
+            alignment: left
+        }
+        layout {
+            sequence: 40
+            region: @PLACE_HOLD
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+            columnSpan: 6
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+            maxLength: 200
+        }
+        help {
+            helpText: Why this hold is being placed (e.g. failed inspection, recall, damage).
+        }
+    )
+
+    region PLACE_HOLD_BUTTONS (
+        name: Place Hold Buttons
+        type: staticContent
+        layout {
+            sequence: 31
+            slot: BODY
+        }
+        appearance {
+            template: @/buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    button PLACE_HOLD_BTN (
+        buttonName: PLACE_HOLD_BTN
+        label: Place Hold
+        layout {
+            sequence: 10
+            region: @PLACE_HOLD_BUTTONS
+            slot: NEXT
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: submitPage
+            requiresConfirmation: true
+            warnOnUnsavedChanges: doNotCheck
+        }
+        confirmation {
+            message: Place this hold? PKG_OUTBOUND.allocate_line will immediately stop allocating any matching stock.
+            style: warning
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P150_HOLD_ITEM_ID
+        }
+    )
+
+    process place-hold-proc (
+        name: Place Hold
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                declare
+                    l_hold_id quality_hold.hold_id%type;
+                begin
+                    l_hold_id := pkg_quality.place_hold(
+                        p_item_id     => :P150_HOLD_ITEM_ID,
+                        p_reason      => :P150_HOLD_REASON,
+                        p_lot_id      => :P150_HOLD_LOT_ID,
+                        p_location_id => :P150_HOLD_LOCATION_ID
+                    );
+                    :P150_HOLD_ITEM_ID := null;
+                    :P150_HOLD_LOT_ID := null;
+                    :P150_HOLD_LOCATION_ID := null;
+                    :P150_HOLD_REASON := null;
+                exception
+                    when others then
+                        apex_error.add_error(
+                            p_message          => sqlerrm,
+                            p_display_location => apex_error.c_inline_in_notification
+                        );
+                end;
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        successMessage {
+            successMessage: Hold placed successfully.
+        }
+        serverSideCondition {
+            whenButtonPressed: @PLACE_HOLD_BTN
+        }
+    )
+
+    region RELEASE_HOLD (
+        name: Release Hold
+        type: staticContent
+        layout {
+            sequence: 32
+            slot: BODY
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P150_RELEASE_HOLD_ID (
+        type: selectList
+        label {
+            label: Active Hold
+            alignment: left
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select i.item_code || ' -- ' || h.reason || ' (' || to_char(h.hold_date, 'DD-MON-YYYY') || ')' as d,
+                       h.hold_id as r
+                  from quality_hold h
+                  join item i on i.item_id = h.item_id
+                 where h.status = 'ACTIVE'
+                 order by h.hold_id desc
+                ```
+        }
+        layout {
+            sequence: 10
+            region: @RELEASE_HOLD
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        help {
+            helpText: Only ACTIVE holds are listed.
+        }
+    )
+
+    region RELEASE_HOLD_BUTTONS (
+        name: Release Hold Buttons
+        type: staticContent
+        layout {
+            sequence: 33
+            slot: BODY
+        }
+        appearance {
+            template: @/buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    button RELEASE_HOLD_BTN (
+        buttonName: RELEASE_HOLD_BTN
+        label: Release Hold
+        layout {
+            sequence: 10
+            region: @RELEASE_HOLD_BUTTONS
+            slot: NEXT
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: submitPage
+            requiresConfirmation: true
+            warnOnUnsavedChanges: doNotCheck
+        }
+        confirmation {
+            message: Release this hold? Matching stock becomes allocatable again.
+            style: warning
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P150_RELEASE_HOLD_ID
+        }
+    )
+
+    process release-hold-proc (
+        name: Release Hold
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                begin
+                    pkg_quality.release_hold(p_hold_id => :P150_RELEASE_HOLD_ID);
+                    :P150_RELEASE_HOLD_ID := null;
+                exception
+                    when others then
+                        apex_error.add_error(
+                            p_message          => sqlerrm,
+                            p_display_location => apex_error.c_inline_in_notification
+                        );
+                end;
+                ```
+        }
+        execution {
+            sequence: 30
+        }
+        successMessage {
+            successMessage: Hold released successfully.
+        }
+        serverSideCondition {
+            whenButtonPressed: @RELEASE_HOLD_BTN
         }
     )
 

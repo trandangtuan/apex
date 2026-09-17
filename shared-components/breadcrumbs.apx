@@ -110,6 +110,22 @@ breadcrumb breadcrumb (
         }
     )
 
+    entry inbound-receipt-detail (
+        name: Inbound Receipt Detail
+        pageNumber: 61
+        execution {
+            sequence: 71
+        }
+        appearance {
+            parentEntry: @inbound-receipts
+        }
+        link {
+            target: {
+                page: 61
+            }
+        }
+    )
+
     entry customers (
         name: Customers
         pageNumber: 80

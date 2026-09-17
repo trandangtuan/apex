@@ -1,0 +1,942 @@
+page 61 (
+    name: Inbound Receipt Detail
+    alias: INBOUND-RECEIPT-DETAIL
+    title: Inbound Receipt Detail
+    pageGroup: @inventory
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText: Inbound receipt header and lines (FR-02). Create or edit the header, then add/edit lines below (item, lot, expected qty, putaway location). Status is set automatically and cannot be edited directly: EXPECTED on create, RECEIVING after Confirm, COMPLETED after Done. Confirm receives every pending line into inventory (and puts it away if a putaway location is already set on the line); Done finalizes the receipt once every line is putaway or cancelled.
+    }
+
+    region breadcrumb (
+        name: Inbound Receipt Detail
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: REGION_POSITION_01
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region HEADER_FORM (
+        name: Receipt Header
+        type: form
+        source {
+            location: localDatabase
+            tableName: INBOUND_RECEIPT
+        }
+        layout {
+            sequence: 20
+            slot: BODY
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        edit {
+            enabled: true
+        }
+    )
+
+    pageItem P61_RECEIPT_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @HEADER_FORM
+            slot: regionBody
+        }
+        source {
+            formRegion: @HEADER_FORM
+            column: RECEIPT_ID
+            dataType: number
+            queryOnly: true
+            primaryKey: true
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P61_SUPPLIER_ID (
+        type: selectList
+        label {
+            label: Supplier
+            alignment: left
+        }
+        lov {
+            type: sharedComponent
+            lov: @supplier-active
+        }
+        layout {
+            sequence: 20
+            region: @HEADER_FORM
+            slot: regionBody
+            alignment: left
+            columnSpan: 6
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        source {
+            formRegion: @HEADER_FORM
+            column: SUPPLIER_ID
+            dataType: number
+        }
+        help {
+            helpText: Supplier this receipt is expected from. Only active suppliers are listed.
+        }
+    )
+
+    pageItem P61_PO_REFERENCE (
+        type: textField
+        label {
+            label: PO Reference
+            alignment: left
+        }
+        layout {
+            sequence: 30
+            region: @HEADER_FORM
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+            columnSpan: 6
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 40
+        }
+        source {
+            formRegion: @HEADER_FORM
+            column: PO_REFERENCE
+            dataType: varchar2
+        }
+        help {
+            helpText: Optional purchase order reference from the supplier.
+        }
+    )
+
+    pageItem P61_WAREHOUSE_ID (
+        type: selectList
+        label {
+            label: Warehouse
+            alignment: left
+        }
+        lov {
+            type: sharedComponent
+            lov: @warehouse-active
+        }
+        layout {
+            sequence: 40
+            region: @HEADER_FORM
+            slot: regionBody
+            alignment: left
+            columnSpan: 6
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        source {
+            formRegion: @HEADER_FORM
+            column: WAREHOUSE_ID
+            dataType: number
+        }
+        help {
+            helpText: Warehouse that will receive this shipment. Only active warehouses are listed.
+        }
+    )
+
+    pageItem P61_EXPECTED_DATE (
+        type: datePicker
+        label {
+            label: Expected Date
+            alignment: left
+        }
+        layout {
+            sequence: 50
+            region: @HEADER_FORM
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+            columnSpan: 6
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        source {
+            formRegion: @HEADER_FORM
+            column: EXPECTED_DATE
+            dataType: date
+        }
+        help {
+            helpText: Date the shipment is expected to arrive.
+        }
+    )
+
+    pageItem P61_STATUS (
+        type: displayOnly
+        label {
+            label: Status
+            alignment: left
+        }
+        layout {
+            sequence: 60
+            region: @HEADER_FORM
+            slot: regionBody
+            alignment: left
+            columnSpan: 6
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        source {
+            formRegion: @HEADER_FORM
+            column: STATUS
+            dataType: varchar2
+            queryOnly: true
+        }
+    )
+
+    pageItem P61_RECEIVED_BY (
+        type: textField
+        label {
+            label: Received By
+            alignment: left
+        }
+        layout {
+            sequence: 70
+            region: @HEADER_FORM
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+            columnSpan: 6
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 60
+        }
+        source {
+            formRegion: @HEADER_FORM
+            column: RECEIVED_BY
+            dataType: varchar2
+        }
+        help {
+            helpText: Name of the warehouse staff member who received this shipment.
+        }
+    )
+
+    region QUICK_ADD_LINE (
+        name: Quick Add Line
+        type: staticContent
+        layout {
+            sequence: 25
+            slot: BODY
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P61_RECEIPT_ID
+        }
+    )
+
+    pageItem P61_SCAN_CODE (
+        type: textField
+        label {
+            label: Scan / Enter Item Code
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @QUICK_ADD_LINE
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 128
+        }
+        help {
+            helpText: Scan the item's barcode/QR code (or type its item code) and press Enter. If a pending line for this item already exists on this receipt, its expected quantity goes up by 1 instead of adding a duplicate line; otherwise a new line is added with expected quantity 1. Matches ITEM.item_code, ITEM.barcode_value, or ITEM.qr_value for active items. Edit quantity, lot, or putaway location in the grid below afterward.
+        }
+    )
+
+    dynamicAction DA_QUICK_ADD_LINE (
+        name: Quick Add Line on Scan
+        execution {
+            sequence: 10
+        }
+        when {
+            event: keydown
+            selectionType: items
+            items: [
+                P61_SCAN_CODE
+            ]
+        }
+        clientSideCondition {
+            type: jsExpression
+            javaScriptExpression: this.browserEvent.which === 13
+        }
+
+        action quick-add-lookup (
+            action: executeServerSideCode
+            settings {
+                itemsToSubmit: [
+                    P61_SCAN_CODE
+                    P61_RECEIPT_ID
+                ]
+                plsqlCode:
+                    ```plsql
+                    declare
+                        l_item_id item.item_id%type;
+                        l_line_id inbound_receipt_line.line_id%type;
+                    begin
+                        if :P61_SCAN_CODE is null then
+                            return;
+                        end if;
+
+                        begin
+                            select item_id
+                              into l_item_id
+                              from item
+                             where is_active = 'Y'
+                               and :P61_SCAN_CODE in (item_code, barcode_value, qr_value);
+                        exception
+                            when no_data_found then
+                                apex_error.add_error(
+                                    p_message          => 'No active item found for code "' || :P61_SCAN_CODE || '".',
+                                    p_display_location => apex_error.c_inline_in_notification
+                                );
+                                return;
+                            when too_many_rows then
+                                apex_error.add_error(
+                                    p_message          => 'Code "' || :P61_SCAN_CODE || '" matches more than one item. Add the line manually below.',
+                                    p_display_location => apex_error.c_inline_in_notification
+                                );
+                                return;
+                        end;
+
+                        begin
+                            l_line_id := pkg_inbound.add_or_increment_line(
+                                p_receipt_id => :P61_RECEIPT_ID,
+                                p_item_id    => l_item_id,
+                                p_qty        => 1
+                            );
+                        exception
+                            when others then
+                                apex_error.add_error(
+                                    p_message          => sqlerrm,
+                                    p_display_location => apex_error.c_inline_in_notification
+                                );
+                                return;
+                        end;
+                    end;
+                    ```
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+        action quick-add-refresh-grid (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @LINES_GRID
+            }
+            execution {
+                sequence: 20
+            }
+        )
+
+        action quick-add-clear-and-refocus (
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript
+                    apex.item("P61_SCAN_CODE").setValue("");
+                    apex.item("P61_SCAN_CODE").setFocus();
+                    ```
+            }
+            execution {
+                sequence: 30
+            }
+        )
+    )
+
+    region LINES_GRID (
+        name: Inbound Receipt Lines
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select
+                    line_id,
+                    receipt_id,
+                    item_id,
+                    lot_id,
+                    expected_qty,
+                    received_qty,
+                    putaway_location_id,
+                    status
+                from inbound_receipt_line
+                where receipt_id = :P61_RECEIPT_ID
+                order by line_id
+                ```
+            pageItemsToSubmit: [
+                P61_RECEIPT_ID
+            ]
+        }
+        layout {
+            sequence: 30
+            slot: BODY
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P61_RECEIPT_ID
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
+        pagination {
+            type: page
+            showTotalCount: true
+        }
+        messages {
+            whenNoDataFound: No lines for this receipt yet. Add a line below.
+        }
+        toolbar {
+            controls: [
+                searchCol
+                searchField
+                actionsMenu
+                resetButton
+                saveButton
+            ]
+        }
+        download {
+            formats: [
+                csv
+                excel
+            ]
+        }
+
+        savedReport PRIMARY (
+            visibility: primary
+            view {
+                default: grid
+            }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    sequence: 0
+                }
+            )
+            displayColumn (
+                column: @LINE_ID
+                layout {
+                    sequence: 1
+                }
+            )
+            displayColumn (
+                column: @ITEM_ID
+                layout {
+                    sequence: 2
+                }
+            )
+            displayColumn (
+                column: @LOT_ID
+                layout {
+                    sequence: 3
+                }
+            )
+            displayColumn (
+                column: @EXPECTED_QTY
+                layout {
+                    sequence: 4
+                }
+            )
+            displayColumn (
+                column: @RECEIVED_QTY
+                layout {
+                    sequence: 5
+                }
+            )
+            displayColumn (
+                column: @PUTAWAY_LOCATION_ID
+                layout {
+                    sequence: 6
+                }
+            )
+            displayColumn (
+                column: @STATUS
+                layout {
+                    sequence: 7
+                }
+            )
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 5
+            }
+        )
+
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+        )
+
+        column LINE_ID (
+            type: hidden
+            layout {
+                sequence: 15
+            }
+            source {
+                databaseColumn: LINE_ID
+                dataType: number
+                primaryKey: true
+            }
+        )
+
+        column LINE_RECEIPT_ID (
+            type: hidden
+            layout {
+                sequence: 16
+            }
+            default {
+                type: item
+                item: P61_RECEIPT_ID
+            }
+            source {
+                databaseColumn: RECEIPT_ID
+                dataType: number
+            }
+        )
+
+        column ITEM_ID (
+            type: selectList
+            heading {
+                heading: Item
+            }
+            layout {
+                sequence: 20
+            }
+            lov {
+                type: sharedComponent
+                lov: @item-active
+            }
+            source {
+                databaseColumn: ITEM_ID
+                dataType: number
+            }
+        )
+
+        column LOT_ID (
+            type: selectList
+            heading {
+                heading: Lot
+            }
+            layout {
+                sequence: 30
+            }
+            lov {
+                type: sharedComponent
+                lov: @lot-any
+                displayExtraValues: true
+            }
+            source {
+                databaseColumn: LOT_ID
+                dataType: number
+            }
+        )
+
+        column EXPECTED_QTY (
+            type: numberField
+            heading {
+                heading: Expected Qty
+                alignment: end
+            }
+            layout {
+                sequence: 40
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: EXPECTED_QTY
+                dataType: number
+            }
+        )
+
+        column RECEIVED_QTY (
+            type: numberField
+            heading {
+                heading: Received Qty
+                alignment: end
+            }
+            layout {
+                sequence: 50
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: RECEIVED_QTY
+                dataType: number
+            }
+        )
+
+        column PUTAWAY_LOCATION_ID (
+            type: selectList
+            heading {
+                heading: Putaway Location
+            }
+            layout {
+                sequence: 60
+            }
+            lov {
+                type: sharedComponent
+                lov: @location-active
+                displayExtraValues: true
+            }
+            source {
+                databaseColumn: PUTAWAY_LOCATION_ID
+                dataType: number
+            }
+        )
+
+        column STATUS (
+            type: selectList
+            heading {
+                heading: Status
+            }
+            layout {
+                sequence: 70
+            }
+            lov {
+                type: staticValues
+                staticValues: STATIC:Pending;PENDING,Received;RECEIVED,Putaway;PUTAWAY,Short;SHORT,Cancelled;CANCELLED
+            }
+            source {
+                databaseColumn: STATUS
+                dataType: varchar2
+            }
+        )
+    )
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 40
+            slot: BODY
+        }
+        appearance {
+            template: @/buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Back to List
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: CLOSE
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 60
+                clearCache: 60
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Delete
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: DELETE
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: delete
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Delete this inbound receipt and all its lines? This cannot be undone.
+            style: danger
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P61_RECEIPT_ID
+        }
+    )
+
+    button confirm_receipt (
+        buttonName: CONFIRM_RECEIPT
+        label: Confirm
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: NEXT
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: submitPage
+            requiresConfirmation: true
+            warnOnUnsavedChanges: doNotCheck
+        }
+        confirmation {
+            message: Confirm this receipt? This receives every pending line into inventory (posting to the RECEIVING dock location), and puts away any line that already has a putaway location set.
+            style: warning
+        }
+        serverSideCondition {
+            type: expression
+            language: plsql
+            plsqlExpression: :P61_RECEIPT_ID IS NOT NULL AND NVL(:P61_STATUS,'X') NOT IN ('COMPLETED','CLOSED')
+        }
+    )
+
+    button complete_receipt (
+        buttonName: COMPLETE_RECEIPT
+        label: Done
+        layout {
+            sequence: 25
+            region: @buttons
+            slot: NEXT
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: submitPage
+            requiresConfirmation: true
+            warnOnUnsavedChanges: doNotCheck
+        }
+        confirmation {
+            message: Complete this receipt? This validates every line is putaway or cancelled and posts the final inventory update. This cannot be undone.
+            style: warning
+        }
+        serverSideCondition {
+            type: expression
+            language: plsql
+            plsqlExpression: :P61_RECEIPT_ID IS NOT NULL AND NVL(:P61_STATUS,'X') NOT IN ('COMPLETED','CLOSED')
+        }
+    )
+
+    button apply-changes (
+        buttonName: APPLY-CHANGES
+        label: Save Changes
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: NEXT
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: update
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P61_RECEIPT_ID
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Create
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: CREATE
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: insert
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P61_RECEIPT_ID
+        }
+    )
+
+    process initialize-header-form (
+        name: Initialize Receipt Header
+        type: formInitialization
+        formRegion: @HEADER_FORM
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+    )
+
+    process process-header-form (
+        name: Process Receipt Header
+        type: formAutoRowProcessing
+        formRegion: @HEADER_FORM
+        execution {
+            sequence: 20
+        }
+    )
+
+    process LINES_GRID_ARP (
+        name: Inbound Receipt Lines - Save Data
+        type: interactiveGridAutoRowProcessing
+        editableRegion: @LINES_GRID
+        execution {
+            sequence: 30
+        }
+    )
+
+    process confirm-receipt-proc (
+        name: Confirm Receipt
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                declare
+                    l_putaway_qty inbound_receipt_line.expected_qty%type;
+                begin
+                    for r in (
+                        select line_id, expected_qty, received_qty, lot_id, putaway_location_id, status
+                          from inbound_receipt_line
+                         where receipt_id = :P61_RECEIPT_ID
+                           and status in ('PENDING', 'RECEIVED')
+                    ) loop
+                        l_putaway_qty := r.received_qty;
+
+                        if r.status = 'PENDING' then
+                            pkg_inbound.receive_line(
+                                p_line_id      => r.line_id,
+                                p_received_qty => r.expected_qty,
+                                p_lot_id       => r.lot_id
+                            );
+                            l_putaway_qty := r.expected_qty;
+                        end if;
+
+                        if r.putaway_location_id is not null then
+                            pkg_inbound.putaway_line(
+                                p_line_id     => r.line_id,
+                                p_location_id => r.putaway_location_id,
+                                p_qty         => l_putaway_qty
+                            );
+                        end if;
+                    end loop;
+                exception
+                    when others then
+                        apex_error.add_error(
+                            p_message          => sqlerrm,
+                            p_display_location => apex_error.c_inline_in_notification
+                        );
+                end;
+                ```
+        }
+        execution {
+            sequence: 35
+        }
+        successMessage {
+            successMessage: Receipt confirmed -- pending lines received into inventory (and put away where a location was already set).
+        }
+        serverSideCondition {
+            whenButtonPressed: @confirm_receipt
+        }
+    )
+
+    process complete-receipt-proc (
+        name: Complete Receipt
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                pkg_inbound.complete_receipt(p_receipt_id => :P61_RECEIPT_ID);
+                ```
+        }
+        execution {
+            sequence: 40
+        }
+        successMessage {
+            successMessage: Receipt completed successfully.
+        }
+        serverSideCondition {
+            whenButtonPressed: @complete_receipt
+        }
+    )
+
+)

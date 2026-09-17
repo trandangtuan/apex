@@ -22,6 +22,16 @@ create or replace package pkg_inbound as
     p_lot_id       in inbound_receipt_line.lot_id%type default null
   ) return inbound_receipt_line.line_id%type;
 
+  -- Quick-add (e.g. barcode/QR scan): if a PENDING line already exists for
+  -- this item on this receipt, bump its expected_qty instead of creating a
+  -- duplicate line. Raises ORA-20043 if more than one PENDING line matches
+  -- (ambiguous which one to bump) -- caller should surface that to the user.
+  function add_or_increment_line (
+    p_receipt_id in inbound_receipt_line.receipt_id%type,
+    p_item_id    in inbound_receipt_line.item_id%type,
+    p_qty        in inbound_receipt_line.expected_qty%type default 1
+  ) return inbound_receipt_line.line_id%type;
+
   procedure receive_line (
     p_line_id      in inbound_receipt_line.line_id%type,
     p_received_qty in inbound_receipt_line.received_qty%type,
@@ -78,6 +88,39 @@ create or replace package body pkg_inbound as
 
     return l_line_id;
   end add_line;
+
+  function add_or_increment_line (
+    p_receipt_id in inbound_receipt_line.receipt_id%type,
+    p_item_id    in inbound_receipt_line.item_id%type,
+    p_qty        in inbound_receipt_line.expected_qty%type default 1
+  ) return inbound_receipt_line.line_id%type is
+    l_line_id inbound_receipt_line.line_id%type;
+  begin
+    select line_id
+      into l_line_id
+      from inbound_receipt_line
+     where receipt_id = p_receipt_id
+       and item_id    = p_item_id
+       and status     = 'PENDING';
+
+    update inbound_receipt_line
+       set expected_qty = expected_qty + p_qty,
+           updated_by   = coalesce(sys_context('APEX$SESSION','APP_USER'), user),
+           updated_on   = sysdate
+     where line_id = l_line_id;
+
+    return l_line_id;
+  exception
+    when no_data_found then
+      return add_line(
+        p_receipt_id   => p_receipt_id,
+        p_item_id      => p_item_id,
+        p_expected_qty => p_qty
+      );
+    when too_many_rows then
+      raise_application_error(-20043,
+        'Multiple pending lines already exist for this item on this receipt; update the quantity manually in the grid.');
+  end add_or_increment_line;
 
   procedure receive_line (
     p_line_id      in inbound_receipt_line.line_id%type,

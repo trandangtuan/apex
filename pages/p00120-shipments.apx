@@ -12,7 +12,7 @@ page 120 (
         formAutoComplete: false
     }
     help {
-        helpText: Read-only shipment/manifest records (FR-04), created by PKG_SHIPMENT.ship_order once an order is fully packed.
+        helpText: Shipment/manifest records (FR-04). Use Ship Order below once an order is PACKED -- this closes the order out of the warehouse and creates the shipment record shown in the report.
     }
 
     region breadcrumb (
@@ -186,6 +186,181 @@ page 120 (
                 dataType: STRING
             }
         )
+    )
+
+    region SHIP_ORDER (
+        name: Ship Order
+        type: staticContent
+        layout {
+            sequence: 30
+            slot: BODY
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P120_SHIP_ORDER_ID (
+        type: selectList
+        label {
+            label: Order (packed)
+            alignment: left
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select order_number as d, order_id as r
+                  from outbound_order
+                 where status = 'PACKED'
+                 order by order_id desc
+                ```
+        }
+        layout {
+            sequence: 10
+            region: @SHIP_ORDER
+            slot: regionBody
+            alignment: left
+            columnSpan: 4
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        help {
+            helpText: Only orders in PACKED status are listed. Shipping removes the packed stock from the shipping staging location and closes the order.
+        }
+    )
+
+    pageItem P120_CARRIER (
+        type: textField
+        label {
+            label: Carrier
+            alignment: left
+        }
+        layout {
+            sequence: 20
+            region: @SHIP_ORDER
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+            columnSpan: 4
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 60
+        }
+        help {
+            helpText: Optional carrier name for this shipment (e.g. the freight/parcel company).
+        }
+    )
+
+    pageItem P120_TRACKING_NUMBER (
+        type: textField
+        label {
+            label: Tracking Number
+            alignment: left
+        }
+        layout {
+            sequence: 30
+            region: @SHIP_ORDER
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+            columnSpan: 4
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 60
+        }
+        help {
+            helpText: Optional carrier tracking number for this shipment.
+        }
+    )
+
+    region SHIP_BUTTONS (
+        name: Ship Buttons
+        type: staticContent
+        layout {
+            sequence: 31
+            slot: BODY
+        }
+        appearance {
+            template: @/buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    button SHIP_ORDER_BTN (
+        buttonName: SHIP_ORDER_BTN
+        label: Ship Order
+        layout {
+            sequence: 10
+            region: @SHIP_BUTTONS
+            slot: NEXT
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: submitPage
+            requiresConfirmation: true
+            warnOnUnsavedChanges: doNotCheck
+        }
+        confirmation {
+            message: Ship this order? This removes the packed stock from the shipping staging location and closes the order. This cannot be undone.
+            style: warning
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P120_SHIP_ORDER_ID
+        }
+    )
+
+    process ship-order-proc (
+        name: Ship Order
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                declare
+                    l_shipment_id shipment.shipment_id%type;
+                begin
+                    l_shipment_id := pkg_shipment.ship_order(
+                        p_order_id       => :P120_SHIP_ORDER_ID,
+                        p_carrier        => :P120_CARRIER,
+                        p_tracking_number => :P120_TRACKING_NUMBER
+                    );
+                    :P120_SHIP_ORDER_ID := null;
+                    :P120_CARRIER := null;
+                    :P120_TRACKING_NUMBER := null;
+                exception
+                    when others then
+                        apex_error.add_error(
+                            p_message          => sqlerrm,
+                            p_display_location => apex_error.c_inline_in_notification
+                        );
+                end;
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        successMessage {
+            successMessage: Order shipped successfully.
+        }
+        serverSideCondition {
+            whenButtonPressed: @SHIP_ORDER_BTN
+        }
     )
 
 )

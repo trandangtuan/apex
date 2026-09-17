@@ -48,6 +48,14 @@ Hệ quả cần nhớ khi tạo bảng/constraint mới:
 3. `compiler-truth audit` offline **không chạy được** trong môi trường này (thiếu Oracle APEXlang runtime jar / VS Code extension) — bỏ qua, coi live validate qua SQLcl là bước xác thực có thẩm quyền cuối cùng (đúng theo chính sách của workflow: local check chỉ là advisory khi live validate đã pass).
 4. Lệnh import thật: `runtime roundtrip --import-intent validate-and-import --target-resolution-mode update-existing --skip-runtime-verification --execution-mode path --workspaceid 6802490454262707` — **bắt buộc phải có `--workspaceid` tường minh**, nếu không sẽ bị chặn với lỗi `lookup_scope_workspace_missing` dù `--db-connection-name` đã đúng.
 5. App càng nhiều trang thì `runtime roundtrip` càng lâu — timeout 240s từng đủ cho ~10 trang nhưng bị `live_validate_timeout` khi app lên 14+ trang. Dùng `timeout 480` (hoặc hơn) cho các lần import sau khi app đã lớn.
+6. **`--timeout` ở ngoài (shell) không sửa được `live_validate_timeout` khi app đã ~23 trang trở lên** — bên trong `apexctl.mjs runtime roundtrip` có budget riêng cho stage `live_validate` cố định 30s, không đổi được qua cờ CLI nào, và không liên quan đến `timeout 480` bọc ngoài. Khi gặp `failure_class: live_validate_timeout` nhưng đọc `problems_path`/transcript thấy rõ ràng SQLcl in ra `"Validation successful."` (không phải lỗi biên dịch thật) — đây là bug phân loại của wrapper, không phải lỗi `.apx`. Cách xử lý: bỏ qua `apexctl.mjs runtime roundtrip` cho lần import đó, chạy thẳng qua SQLcl (tin tưởng transcript "Validation successful." là bằng chứng đủ để import):
+   ```bash
+   sql -S /nolog <<'EOF'
+   connect -name admin_freepdb1
+   apex import -input /tmp/26house-clean-app -workspaceid 6802490454262707
+   EOF
+   ```
+   Lưu ý cú pháp: `sql -S <tên-connection-đã-lưu>` **không** hoạt động để dùng lại 1 saved connection — phải `sql -S /nolog` rồi `connect -name <tên>` bên trong script mới đúng.
 
 ## Trước khi tạo bảng mới: luôn kiểm tra trùng tên constraint
 Chạy `select constraint_name from user_constraints order by 1;` và rà bằng mắt trước khi đặt tên constraint cho bảng mới, thay vì đợi lỗi `ORA-02264` rồi sửa. Các prefix đã dùng (không được đụng lại cho bảng khác ngoài bảng đã liệt kê):

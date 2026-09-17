@@ -83,7 +83,15 @@ create or replace package body pkg_picking as
       join item i on i.item_id = t.item_id
      where t.task_id = p_task_id;
 
-    if p_scanned_code is null or p_scanned_code not in (l_barcode, l_qr) then
+    -- NOT IN (l_barcode, l_qr) would silently pass on any mismatch once either
+    -- is null (x NOT IN (a, NULL) is NULL, not TRUE, in PL/SQL) -- most items
+    -- only have a barcode, so this must be spelled out instead of NOT IN.
+    if p_scanned_code is null
+       or (
+            (l_barcode is null or p_scanned_code <> l_barcode)
+            and (l_qr is null or p_scanned_code <> l_qr)
+          )
+    then
       raise_application_error(-20060,
         'Scan mismatch on task_id=' || p_task_id || ': scanned "' || p_scanned_code ||
         '" does not match expected item barcode/QR');
