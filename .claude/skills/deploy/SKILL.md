@@ -56,7 +56,7 @@ connect -name wms_remote
 apex validate -input <path-to-clean-copy-or-file> -workspaceid 2313406132176276
 EOF
 ```
-This is a real SQLcl subcommand distinct from `apex import` — it compiles against the live engine but never touches the target application. Iterate here until `Validation successful.`, then apply the confirmed-good syntax to the real page and remove the scratch file. Used this to confirm `type: qrCode` on a pageItem (see `CLAUDE.md`) without risking app 100.
+This is a real SQLcl subcommand distinct from `apex import` — it compiles against the live engine but never touches the target application. Iterate here until `Validation successful.`, then apply the syntax to the real page and remove the scratch file. **`Validation successful.` only proves the compiler accepts the syntax, not that the component renders/works at runtime** — after deploying, still ask the user to look at the real page before calling it done. Used this trick to try `type: qrCode` on a pageItem: it compiled clean, but turned out not to render any widget at all in the running app (see `CLAUDE.md`) — reverted.
 
 ## 5A. Live validate + import — local dev target
 
