@@ -12,7 +12,7 @@ page 91 (
         formAutoComplete: false
     }
     help {
-        helpText: Outbound order header and lines (FR-04). Create or edit the header, then add/edit lines below (item, qty ordered). QTY_ALLOCATED/QTY_PICKED/QTY_SHIPPED and STATUS are maintained by PKG_OUTBOUND/PKG_PICKING, not by direct edit. Once every line is PICKED, use Pack Order (PKG_PACKING.pack_order); once packed, use Ship Order (PKG_SHIPMENT.ship_order).
+        helpText: Outbound order header and lines (FR-04). Create or edit the header, then add/edit lines below (item, qty ordered). QTY_ALLOCATED/QTY_PICKED/QTY_SHIPPED and STATUS are maintained by PKG_OUTBOUND/PKG_PICKING, not by direct edit. Lifecycle: RECEIVED (on create) -> Allocate reserves stock and creates pick tasks (PKG_OUTBOUND.allocate_order) -> ALLOCATED -> picking on the Pick Tasks screen moves it through PICKING/PICKED automatically -> Pack Order (PKG_PACKING.pack_order) once every line is PICKED -> Ship Order (PKG_SHIPMENT.ship_order) once packed. Cancel Order (PKG_OUTBOUND.cancel_order) releases any reserved/allocated stock and is available any time before SHIPPED.
     }
 
     region breadcrumb (
@@ -716,6 +716,62 @@ page 91 (
         }
     )
 
+    button ALLOCATE_ORDER_BTN (
+        buttonName: ALLOCATE_ORDER_BTN
+        label: Allocate
+        layout {
+            sequence: 22
+            region: @buttons
+            slot: NEXT
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: submitPage
+            requiresConfirmation: true
+            warnOnUnsavedChanges: doNotCheck
+        }
+        confirmation {
+            message: Allocate this order? This reserves stock for each line (PICK_FACE before BULK, FEFO by lot expiry) and creates the pick tasks used on the Pick Tasks screen.
+            style: warning
+        }
+        serverSideCondition {
+            type: expression
+            language: plsql
+            plsqlExpression: :P91_ORDER_ID IS NOT NULL AND NVL(:P91_STATUS,'X') = 'RECEIVED'
+        }
+    )
+
+    button CANCEL_ORDER_BTN (
+        buttonName: CANCEL_ORDER_BTN
+        label: Cancel Order
+        layout {
+            sequence: 23
+            region: @buttons
+            slot: NEXT
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: submitPage
+            requiresConfirmation: true
+            warnOnUnsavedChanges: doNotCheck
+        }
+        confirmation {
+            message: Cancel this order? This releases any reserved/allocated stock, cancels every line and pick task, and cannot be undone.
+            style: danger
+        }
+        serverSideCondition {
+            type: expression
+            language: plsql
+            plsqlExpression: :P91_ORDER_ID IS NOT NULL AND NVL(:P91_STATUS,'X') NOT IN ('SHIPPED','CANCELLED')
+        }
+    )
+
     button PACK_ORDER_BTN (
         buttonName: PACK_ORDER_BTN
         label: Pack Order
@@ -834,6 +890,62 @@ page 91 (
         formRegion: @HEADER_FORM
         execution {
             sequence: 20
+        }
+    )
+
+    process allocate-order-proc (
+        name: Allocate Order
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                begin
+                    pkg_outbound.allocate_order(p_order_id => :P91_ORDER_ID);
+                exception
+                    when others then
+                        apex_error.add_error(
+                            p_message          => sqlerrm,
+                            p_display_location => apex_error.c_inline_in_notification
+                        );
+                end;
+                ```
+        }
+        execution {
+            sequence: 33
+        }
+        successMessage {
+            successMessage: Order allocated -- stock reserved and pick tasks created where available. Lines with insufficient stock are left SHORT.
+        }
+        serverSideCondition {
+            whenButtonPressed: @ALLOCATE_ORDER_BTN
+        }
+    )
+
+    process cancel-order-proc (
+        name: Cancel Order
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                begin
+                    pkg_outbound.cancel_order(p_order_id => :P91_ORDER_ID);
+                exception
+                    when others then
+                        apex_error.add_error(
+                            p_message          => sqlerrm,
+                            p_display_location => apex_error.c_inline_in_notification
+                        );
+                end;
+                ```
+        }
+        execution {
+            sequence: 34
+        }
+        successMessage {
+            successMessage: Order cancelled -- any reserved/allocated stock has been released.
+        }
+        serverSideCondition {
+            whenButtonPressed: @CANCEL_ORDER_BTN
         }
     )
 
