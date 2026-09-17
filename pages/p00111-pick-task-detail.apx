@@ -1,0 +1,495 @@
+page 111 (
+    name: Pick Task Detail
+    alias: PICK-TASK-DETAIL
+    title: Pick Task Detail
+    pageGroup: @outbound
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText: Single pick task (FR-03, FR-05). Scan the item's barcode/QR (or type its code), enter Qty Picked, then press Enter to confirm via PKG_PICKING.confirm_pick -- a wrong-item scan or over-pick is rejected before any stock moves. The task info below refreshes after each scan; once the task reaches PICKED/CANCELLED the scan panel no longer accepts further picks (confirm_pick itself blocks any quantity beyond what was requested).
+    }
+
+    region breadcrumb (
+        name: Pick Task Detail
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: REGION_POSITION_01
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region TASK_FORM (
+        name: Task
+        type: form
+        source {
+            location: localDatabase
+            tableName: PICK_TASK
+        }
+        layout {
+            sequence: 15
+            slot: BODY
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P111_TASK_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @TASK_FORM
+            slot: regionBody
+        }
+        source {
+            formRegion: @TASK_FORM
+            column: TASK_ID
+            dataType: number
+            queryOnly: true
+            primaryKey: true
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P111_STATUS (
+        type: hidden
+        layout {
+            sequence: 20
+            region: @TASK_FORM
+            slot: regionBody
+        }
+        source {
+            formRegion: @TASK_FORM
+            column: STATUS
+            dataType: varchar2
+            queryOnly: true
+        }
+    )
+
+    region TASK_INFO (
+        name: Task Info
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select
+                    t.task_id,
+                    ol.order_id,
+                    o.order_number,
+                    i.item_code,
+                    lt.lot_number,
+                    l.location_code,
+                    t.sequence_no,
+                    t.qty_requested,
+                    t.qty_picked,
+                    t.status,
+                    t.scanned_code,
+                    t.scan_ts
+                from pick_task t
+                join outbound_order_line ol on ol.line_id = t.order_line_id
+                join outbound_order o on o.order_id = ol.order_id
+                join item i on i.item_id = t.item_id
+                join location l on l.location_id = t.from_location_id
+                left join lot lt on lt.lot_id = t.lot_id
+                where t.task_id = :P111_TASK_ID
+                ```
+            pageItemsToSubmit: [
+                P111_TASK_ID
+            ]
+        }
+        layout {
+            sequence: 20
+            slot: BODY
+        }
+        appearance {
+            template: @/interactive-report
+            templateOptions: #DEFAULT#
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        messages {
+            whenNoDataFound: Task not found.
+        }
+
+        column TASK_ID (
+            type: hidden
+            heading {
+                heading: Task Id
+            }
+            layout {
+                sequence: 10
+            }
+            source {
+                dataType: NUMBER
+            }
+        )
+
+        column ORDER_ID (
+            type: hidden
+            heading {
+                heading: Order Id
+            }
+            layout {
+                sequence: 20
+            }
+            source {
+                dataType: NUMBER
+            }
+        )
+
+        column ORDER_NUMBER (
+            type: plainText
+            heading {
+                heading: Order Number
+            }
+            layout {
+                sequence: 30
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column ITEM_CODE (
+            type: plainText
+            heading {
+                heading: Item Code
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column LOT_NUMBER (
+            type: plainText
+            heading {
+                heading: Lot Number
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column LOCATION_CODE (
+            type: plainText
+            heading {
+                heading: From Location
+            }
+            layout {
+                sequence: 60
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column SEQUENCE_NO (
+            type: plainText
+            heading {
+                heading: Pick Sequence
+                alignment: end
+            }
+            layout {
+                sequence: 70
+                columnAlignment: end
+            }
+            source {
+                dataType: NUMBER
+            }
+        )
+
+        column QTY_REQUESTED (
+            type: plainText
+            heading {
+                heading: Qty Requested
+                alignment: end
+            }
+            layout {
+                sequence: 80
+                columnAlignment: end
+            }
+            source {
+                dataType: NUMBER
+            }
+        )
+
+        column QTY_PICKED (
+            type: plainText
+            heading {
+                heading: Qty Picked
+                alignment: end
+            }
+            layout {
+                sequence: 90
+                columnAlignment: end
+            }
+            source {
+                dataType: NUMBER
+            }
+        )
+
+        column STATUS (
+            type: plainText
+            heading {
+                heading: Status
+            }
+            layout {
+                sequence: 100
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column SCANNED_CODE (
+            type: plainText
+            heading {
+                heading: Scanned Code
+            }
+            layout {
+                sequence: 110
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column SCAN_TS (
+            type: plainText
+            heading {
+                heading: Scan Time
+            }
+            layout {
+                sequence: 120
+            }
+            source {
+                dataType: STRING
+            }
+        )
+    )
+
+    region SCAN_TO_PICK (
+        name: Scan to Pick
+        type: staticContent
+        layout {
+            sequence: 30
+            slot: BODY
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: expression
+            language: plsql
+            plsqlExpression: :P111_TASK_ID IS NOT NULL AND NVL(:P111_STATUS,'X') NOT IN ('PICKED','CANCELLED')
+        }
+    )
+
+    pageItem P111_QTY_PICKED (
+        type: numberField
+        label {
+            label: Qty Picked
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @SCAN_TO_PICK
+            slot: regionBody
+            alignment: left
+            columnSpan: 6
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        help {
+            helpText: Quantity actually picked. Cannot exceed the remaining requested quantity.
+        }
+    )
+
+    pageItem P111_SCANNED_CODE (
+        type: textField
+        label {
+            label: Scan Barcode / QR
+            alignment: left
+        }
+        layout {
+            sequence: 20
+            region: @SCAN_TO_PICK
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+            columnSpan: 6
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 128
+        }
+        help {
+            helpText: Enter Qty Picked above, then scan (or type) the item's barcode/QR code here and press Enter. A mismatch against this task's expected item is rejected before any stock moves.
+        }
+    )
+
+    dynamicAction DA_CONFIRM_PICK (
+        name: Confirm Pick on Scan
+        execution {
+            sequence: 10
+        }
+        when {
+            event: keydown
+            selectionType: items
+            items: [
+                P111_SCANNED_CODE
+            ]
+        }
+        clientSideCondition {
+            type: jsExpression
+            javaScriptExpression: this.browserEvent.which === 13
+        }
+
+        action confirm-pick-call (
+            action: executeServerSideCode
+            settings {
+                itemsToSubmit: [
+                    P111_TASK_ID
+                    P111_QTY_PICKED
+                    P111_SCANNED_CODE
+                ]
+                plsqlCode:
+                    ```plsql
+                    begin
+                        if :P111_QTY_PICKED is null or to_number(:P111_QTY_PICKED) <= 0 then
+                            apex_error.add_error(
+                                p_message          => 'Enter a Qty Picked greater than zero.',
+                                p_display_location => apex_error.c_inline_in_notification
+                            );
+                            return;
+                        end if;
+
+                        begin
+                            pkg_picking.confirm_pick(
+                                p_task_id      => :P111_TASK_ID,
+                                p_scanned_code => :P111_SCANNED_CODE,
+                                p_qty_picked   => to_number(:P111_QTY_PICKED)
+                            );
+                        exception
+                            when others then
+                                apex_error.add_error(
+                                    p_message          => sqlerrm,
+                                    p_display_location => apex_error.c_inline_in_notification
+                                );
+                        end;
+                    end;
+                    ```
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+        action confirm-pick-refresh-info (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @TASK_INFO
+            }
+            execution {
+                sequence: 20
+            }
+        )
+
+        action confirm-pick-clear-and-refocus (
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript
+                    apex.item("P111_SCANNED_CODE").setValue("");
+                    apex.item("P111_QTY_PICKED").setValue("");
+                    apex.item("P111_SCANNED_CODE").setFocus();
+                    ```
+            }
+            execution {
+                sequence: 30
+            }
+        )
+    )
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 40
+            slot: BODY
+        }
+        appearance {
+            template: @/buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    button back (
+        buttonName: BACK
+        label: Back to List
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: CLOSE
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 110
+                clearCache: 110
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    process initialize-task-form (
+        name: Initialize Task
+        type: formInitialization
+        formRegion: @TASK_FORM
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+    )
+
+)

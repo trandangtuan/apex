@@ -190,6 +190,22 @@ breadcrumb breadcrumb (
         }
     )
 
+    entry pick-task-detail (
+        name: Pick Task Detail
+        pageNumber: 111
+        execution {
+            sequence: 121
+        }
+        appearance {
+            parentEntry: @pick-tasks
+        }
+        link {
+            target: {
+                page: 111
+            }
+        }
+    )
+
     entry shipments (
         name: Shipments
         pageNumber: 120
