@@ -12,7 +12,7 @@ page 61 (
         formAutoComplete: false
     }
     help {
-        helpText: Inbound receipt header and lines (FR-02). Create or edit the header, then add/edit lines below (item, lot, expected qty, putaway location). Status is set automatically and cannot be edited directly: EXPECTED on create, RECEIVING after Confirm, COMPLETED after Done. Confirm receives every pending line into inventory (and puts it away if a putaway location is already set on the line); Done finalizes the receipt once every line is putaway or cancelled.
+        helpText: Inbound receipt header and lines (FR-02). Create or edit the header, then add/edit lines below (item, lot, expected qty, putaway location). Putaway Location only lists PICK_FACE/BULK bins -- picking RECEIVING/SHIPPING there would leave the stock stuck at the dock even after Confirm. Header status: EXPECTED on create, RECEIVING after Confirm, COMPLETED after Done. Confirm receives every pending line into inventory (and puts it away if a putaway location is already set on the line); Done finalizes the receipt once every line is putaway or cancelled.
     }
 
     region breadcrumb (
@@ -645,7 +645,7 @@ page 61 (
             }
             lov {
                 type: sharedComponent
-                lov: @location-active
+                lov: @putaway-location-active
                 displayExtraValues: true
             }
             source {

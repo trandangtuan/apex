@@ -112,6 +112,26 @@ lov location-active (
     }
 )
 
+lov putaway-location-active (
+    name: PUTAWAY_LOCATION_ACTIVE
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select location_code as display_value,
+                   location_id as return_value
+              from location
+             where is_active = 'Y'
+               and location_type in ('PICK_FACE', 'BULK')
+             order by location_code
+            ```
+    }
+    columnMapping {
+        return: return_value
+        display: display_value
+    }
+)
+
 lov lot-any (
     name: LOT_ANY
     source {
