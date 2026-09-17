@@ -158,9 +158,9 @@ breadcrumb breadcrumb (
         }
     )
 
-    entry outbound-order-lines (
-        name: Outbound Order Lines
-        pageNumber: 100
+    entry outbound-order-detail (
+        name: Outbound Order Detail
+        pageNumber: 91
         execution {
             sequence: 110
         }
@@ -169,7 +169,7 @@ breadcrumb breadcrumb (
         }
         link {
             target: {
-                page: 100
+                page: 91
             }
         }
     )

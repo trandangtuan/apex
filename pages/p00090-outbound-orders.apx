@@ -12,7 +12,7 @@ page 90 (
         formAutoComplete: false
     }
     help {
-        helpText: Outbound order headers (FR-04). Customer and Warehouse are selected from active master lists. STATUS moves through received/allocated/picking/picked/packed/shipped automatically via PKG_OUTBOUND/PKG_PICKING/PKG_PACKING/PKG_SHIPMENT, not by direct edit. Use Pack Order below once every line of an order is PICKED.
+        helpText: Outbound order headers (FR-04). Click a row's detail icon to open the order, manage its lines, and pack/ship it. Use New Order to create one.
     }
 
     region breadcrumb (
@@ -35,26 +35,29 @@ page 90 (
         }
     )
 
-    region OUTBOUND_ORDERS_GRID (
+    region OUTBOUND_ORDERS_IR (
         name: Outbound Orders
-        type: interactiveGrid
+        type: interactiveReport
         source {
             location: localDatabase
             type: sqlQuery
             sqlQuery:
                 ```sql
                 select
-                    order_id,
-                    order_number,
-                    customer_id,
-                    warehouse_id,
-                    order_source,
-                    order_date,
-                    required_ship_date,
-                    priority,
-                    status
-                from outbound_order
-                order by order_id desc
+                    o.order_id,
+                    o.order_number,
+                    c.customer_name,
+                    w.warehouse_name,
+                    o.order_source,
+                    o.order_date,
+                    o.required_ship_date,
+                    o.priority,
+                    o.status,
+                    (select count(*) from outbound_order_line ol where ol.order_id = o.order_id) as line_count
+                from outbound_order o
+                join customer c on c.customer_id = o.customer_id
+                join warehouse w on w.warehouse_id = o.warehouse_id
+                order by o.order_id desc
                 ```
         }
         layout {
@@ -62,32 +65,25 @@ page 90 (
             slot: BODY
         }
         appearance {
-            template: @/standard
+            template: @/interactive-report
             templateOptions: #DEFAULT#
         }
-        edit {
-            enabled: true
-            allowedOperations: [
-                add
-                update
-                delete
-            ]
+        link {
+            linkColumn: customTarget
+            target: {
+                page: 91
+                items: {
+                    P91_ORDER_ID: #ORDER_ID#
+                }
+                clearCache: 91
+            }
+            linkIcon: <span role="img" aria-label="Detail" class="fa fa-search-plus" title="View Detail"></span>
         }
         pagination {
-            type: page
-            showTotalCount: true
+            type: rowRangesXToY
         }
         messages {
             whenNoDataFound: No outbound orders found.
-        }
-        toolbar {
-            controls: [
-                searchCol
-                searchField
-                actionsMenu
-                resetButton
-                saveButton
-            ]
         }
         download {
             formats: [
@@ -96,353 +92,169 @@ page 90 (
             ]
         }
 
-        savedReport PRIMARY (
-            visibility: primary
-            view {
-                default: grid
+        column ORDER_ID (
+            type: hidden
+            heading {
+                heading: Order Id
             }
-            singleRowView {
-                displayedColumns: true
-            }
-
-            displayColumn (
-                column: @APEX$ROW_ACTION
-                layout {
-                    sequence: 0
-                }
-            )
-            displayColumn (
-                column: @ORDER_NUMBER
-                layout {
-                    sequence: 1
-                }
-            )
-            displayColumn (
-                column: @CUSTOMER_ID
-                layout {
-                    sequence: 2
-                }
-            )
-            displayColumn (
-                column: @WAREHOUSE_ID
-                layout {
-                    sequence: 3
-                }
-            )
-            displayColumn (
-                column: @ORDER_SOURCE
-                layout {
-                    sequence: 4
-                }
-            )
-            displayColumn (
-                column: @ORDER_DATE
-                layout {
-                    sequence: 5
-                }
-            )
-            displayColumn (
-                column: @REQUIRED_SHIP_DATE
-                layout {
-                    sequence: 6
-                }
-            )
-            displayColumn (
-                column: @PRIORITY
-                layout {
-                    sequence: 7
-                }
-            )
-            displayColumn (
-                column: @STATUS
-                layout {
-                    sequence: 8
-                }
-            )
-        )
-
-        column APEX$ROW_ACTION (
-            type: actionsMenu
-            layout {
-                sequence: 5
-            }
-        )
-
-        column APEX$ROW_SELECTOR (
-            type: rowSelector
             layout {
                 sequence: 10
             }
-        )
-
-        column ORDER_ID (
-            type: hidden
-            layout {
-                sequence: 15
-            }
             source {
-                databaseColumn: ORDER_ID
-                dataType: number
-                primaryKey: true
+                dataType: NUMBER
             }
         )
 
         column ORDER_NUMBER (
-            type: textField
+            type: plainText
             heading {
                 heading: Order Number
             }
             layout {
                 sequence: 20
             }
-            validation {
-                maxLength: 30
-            }
             source {
-                databaseColumn: ORDER_NUMBER
-                dataType: varchar2
+                dataType: STRING
             }
         )
 
-        column CUSTOMER_ID (
-            type: selectList
+        column CUSTOMER_NAME (
+            type: plainText
             heading {
                 heading: Customer
             }
             layout {
                 sequence: 30
             }
-            lov {
-                type: sharedComponent
-                lov: @customer-active
-            }
             source {
-                databaseColumn: CUSTOMER_ID
-                dataType: number
+                dataType: STRING
             }
         )
 
-        column WAREHOUSE_ID (
-            type: selectList
+        column WAREHOUSE_NAME (
+            type: plainText
             heading {
                 heading: Warehouse
             }
             layout {
                 sequence: 40
             }
-            lov {
-                type: sharedComponent
-                lov: @warehouse-active
-            }
             source {
-                databaseColumn: WAREHOUSE_ID
-                dataType: number
+                dataType: STRING
             }
         )
 
         column ORDER_SOURCE (
-            type: textField
+            type: plainText
             heading {
                 heading: Order Source
             }
             layout {
                 sequence: 50
             }
-            validation {
-                maxLength: 20
-            }
             source {
-                databaseColumn: ORDER_SOURCE
-                dataType: varchar2
+                dataType: STRING
             }
         )
 
         column ORDER_DATE (
-            type: datePicker
+            type: plainText
             heading {
                 heading: Order Date
             }
             layout {
                 sequence: 60
             }
+            appearance {
+                formatMask: DD-MON-YYYY
+            }
             source {
-                databaseColumn: ORDER_DATE
-                dataType: date
+                dataType: DATE
             }
         )
 
         column REQUIRED_SHIP_DATE (
-            type: datePicker
+            type: plainText
             heading {
                 heading: Required Ship Date
             }
             layout {
                 sequence: 70
             }
+            appearance {
+                formatMask: DD-MON-YYYY
+            }
             source {
-                databaseColumn: REQUIRED_SHIP_DATE
-                dataType: date
+                dataType: DATE
             }
         )
 
         column PRIORITY (
-            type: textField
+            type: plainText
             heading {
                 heading: Priority
             }
             layout {
                 sequence: 80
             }
-            validation {
-                maxLength: 10
-            }
             source {
-                databaseColumn: PRIORITY
-                dataType: varchar2
+                dataType: STRING
             }
         )
 
         column STATUS (
-            type: selectList
+            type: plainText
             heading {
                 heading: Status
             }
             layout {
                 sequence: 90
             }
-            lov {
-                type: staticValues
-                staticValues: STATIC:Received;RECEIVED,Allocated;ALLOCATED,Picking;PICKING,Picked;PICKED,Packed;PACKED,Shipped;SHIPPED,Cancelled;CANCELLED
+            source {
+                dataType: STRING
+            }
+        )
+
+        column LINE_COUNT (
+            type: plainText
+            heading {
+                heading: Lines
+                alignment: end
+            }
+            layout {
+                sequence: 100
+                columnAlignment: end
             }
             source {
-                databaseColumn: STATUS
-                dataType: varchar2
+                dataType: NUMBER
             }
         )
     )
 
-    process OUTBOUND_ORDERS_GRID_ARP (
-        name: Outbound Orders - Save Data
-        type: interactiveGridAutoRowProcessing
-        editableRegion: @OUTBOUND_ORDERS_GRID
-        execution {
-            sequence: 10
-        }
-    )
-
-    region PACK_ORDER (
-        name: Pack Order
-        type: staticContent
-        layout {
-            sequence: 30
-            slot: BODY
-        }
-        appearance {
-            template: @/standard
-            templateOptions: #DEFAULT#
-        }
-    )
-
-    pageItem P90_PACK_ORDER_ID (
-        type: selectList
-        label {
-            label: Order (fully picked)
-            alignment: left
-        }
-        lov {
-            type: sqlQuery
-            sqlQuery:
-                ```sql
-                select order_number as d, order_id as r
-                  from outbound_order
-                 where status = 'PICKED'
-                 order by order_id desc
-                ```
-        }
+    button NEW_ORDER (
+        buttonName: NEW_ORDER
+        label: New Order
         layout {
             sequence: 10
-            region: @PACK_ORDER
-            slot: regionBody
-            alignment: left
+            region: @OUTBOUND_ORDERS_IR
+            slot: RIGHT_OF_IR_SEARCH_BAR
         }
         appearance {
-            template: @/optional-floating
-            templateOptions: #DEFAULT#
-        }
-        help {
-            helpText: Only orders with every line PICKED are listed. Packing builds package lines from the picked pick tasks and moves the order to PACKED.
-        }
-    )
-
-    region PACK_BUTTONS (
-        name: Pack Buttons
-        type: staticContent
-        layout {
-            sequence: 31
-            slot: BODY
-        }
-        appearance {
-            template: @/buttons-container
-            templateOptions: #DEFAULT#
-        }
-    )
-
-    button PACK_ORDER_BTN (
-        buttonName: PACK_ORDER_BTN
-        label: Pack Order
-        layout {
-            sequence: 10
-            region: @PACK_BUTTONS
-            slot: NEXT
-        }
-        appearance {
-            buttonTemplate: @/text
+            buttonTemplate: @/text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+            icon: fa-plus
             hot: true
-            templateOptions: #DEFAULT#
         }
         behavior {
-            action: submitPage
-            requiresConfirmation: true
+            action: redirectThisApp
+            target: {
+                page: 91
+                clearCache: 91
+            }
             warnOnUnsavedChanges: doNotCheck
-        }
-        confirmation {
-            message: Pack this order? This builds package lines from the picked pick tasks and moves the order to PACKED.
-            style: warning
-        }
-        serverSideCondition {
-            type: itemIsNotNull
-            item: P90_PACK_ORDER_ID
-        }
-    )
-
-    process pack-order-proc (
-        name: Pack Order
-        type: executeCode
-        source {
-            plsqlCode:
-                ```plsql
-                declare
-                    l_package_id ship_package.package_id%type;
-                begin
-                    l_package_id := pkg_packing.pack_order(p_order_id => :P90_PACK_ORDER_ID);
-                    :P90_PACK_ORDER_ID := null;
-                exception
-                    when others then
-                        apex_error.add_error(
-                            p_message          => sqlerrm,
-                            p_display_location => apex_error.c_inline_in_notification
-                        );
-                end;
-                ```
-        }
-        execution {
-            sequence: 20
-        }
-        successMessage {
-            successMessage: Order packed successfully.
-        }
-        serverSideCondition {
-            whenButtonPressed: @PACK_ORDER_BTN
         }
     )
 

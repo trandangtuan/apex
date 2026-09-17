@@ -301,22 +301,6 @@ list navigation-menu (
         }
     )
 
-    entry outbound-order-lines (
-        label: Outbound Order Lines
-        icon {
-            imageIconCssClasses: fa-list-ol
-        }
-        layout {
-            sequence: 20
-            parentEntry: @outbound
-        }
-        link {
-            target: {
-                page: 100
-            }
-        }
-    )
-
     entry pick-tasks (
         label: Pick Tasks
         icon {
