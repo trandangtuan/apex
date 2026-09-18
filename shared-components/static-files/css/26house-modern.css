@@ -35,8 +35,20 @@ body.t-Body,
 
 body.t-Body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    font-size: 14px;
-    line-height: 1.55;
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.t-Body,
+.t-Body input,
+.t-Body select,
+.t-Body textarea,
+.t-Body button,
+.t-Button,
+.t-Region,
+.a-IG,
+.a-IRR-table {
+    font-size: 13px;
 }
 
 a {
@@ -137,19 +149,19 @@ a:hover {
 .t-Region-header {
     background: var(--wms-surface);
     border-bottom: 1px solid var(--wms-slate-200);
-    padding: 14px 20px;
+    padding: 10px 16px;
     border-top-left-radius: var(--wms-radius-lg);
     border-top-right-radius: var(--wms-radius-lg);
 }
 
 .t-Region-title {
     font-weight: 600;
-    font-size: 15px;
+    font-size: 13px;
     color: var(--wms-slate-900);
 }
 
 .t-Region-body {
-    padding: 20px;
+    padding: 16px;
 }
 
 .t-Region--noBorder,
@@ -162,7 +174,7 @@ a:hover {
 .t-Button {
     border-radius: var(--wms-radius-sm);
     font-weight: 500;
-    padding: 8px 16px;
+    padding: 6px 14px;
     border: 1px solid var(--wms-slate-300);
     box-shadow: none;
     transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
@@ -195,14 +207,52 @@ a:hover {
 }
 
 /* Form fields */
+.t-Form-label,
+.t-Form-fieldContainer label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--wms-slate-700);
+    margin-bottom: 3px;
+}
+
+.t-Form-label .u-required-label,
+.t-Form-fieldContainer .u-required-label {
+    color: var(--wms-danger);
+}
+
 .apex-item-text,
 .apex-item-textarea,
 .apex-item-select,
+.apex-item-popup-lov,
+.apex-item-datepicker input,
 input.apex-item-text,
 select.apex-item-select,
 textarea.apex-item-textarea {
     border-radius: var(--wms-radius-sm);
     border: 1px solid var(--wms-slate-300);
+    background: var(--wms-surface);
+    color: var(--wms-slate-900);
+    font-size: 13px;
+    padding: 6px 10px;
+    min-height: 32px;
+    box-shadow: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.apex-item-textarea {
+    min-height: 72px;
+    padding-top: 8px;
+}
+
+.apex-item-text::placeholder,
+.apex-item-textarea::placeholder {
+    color: var(--wms-slate-500);
+}
+
+.apex-item-text:hover:not(:disabled):not(:read-only),
+.apex-item-textarea:hover:not(:disabled):not(:read-only),
+.apex-item-select:hover:not(:disabled) {
+    border-color: var(--wms-slate-500);
 }
 
 .apex-item-text:focus,
@@ -210,10 +260,30 @@ textarea.apex-item-textarea {
 .apex-item-select:focus {
     border-color: var(--wms-primary);
     box-shadow: 0 0 0 3px var(--wms-primary-light);
+    outline: none;
+}
+
+.apex-item-text:disabled,
+.apex-item-textarea:disabled,
+.apex-item-select:disabled,
+.apex-item-text:read-only,
+.apex-item-textarea:read-only,
+.apex-item-text.apex-item-display-only,
+.apex-item-textarea.apex-item-display-only {
+    background: var(--wms-slate-100);
+    border-color: var(--wms-slate-200);
+    color: var(--wms-slate-500);
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+    accent-color: var(--wms-primary);
+    width: 15px;
+    height: 15px;
 }
 
 .t-Form-fieldContainer {
-    margin-bottom: 14px;
+    margin-bottom: 10px;
 }
 
 /* Interactive Grid / Interactive Report */
@@ -229,9 +299,14 @@ textarea.apex-item-textarea {
     background: var(--wms-slate-50);
     color: var(--wms-slate-500);
     font-weight: 600;
-    font-size: 11px;
+    font-size: 10.5px;
     letter-spacing: 0.04em;
     text-transform: uppercase;
+}
+
+.a-GV-cell,
+.a-IRR-table tbody td {
+    font-size: 12.5px;
 }
 
 .a-GV-row:hover,
