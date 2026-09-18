@@ -270,22 +270,6 @@ breadcrumb breadcrumb (
         }
     )
 
-    entry operations-dashboard (
-        name: Operations Dashboard
-        pageNumber: 160
-        execution {
-            sequence: 170
-        }
-        appearance {
-            parentEntry: @home
-        }
-        link {
-            target: {
-                page: 160
-            }
-        }
-    )
-
     entry integration-monitor (
         name: Integration Monitor
         pageNumber: 170

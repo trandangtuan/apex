@@ -413,22 +413,6 @@ list navigation-menu (
         }
     )
 
-    entry operations-dashboard (
-        label: Operations Dashboard
-        icon {
-            imageIconCssClasses: fa-dashboard
-        }
-        layout {
-            sequence: 20
-            parentEntry: @reporting
-        }
-        link {
-            target: {
-                page: 160
-            }
-        }
-    )
-
     entry integration (
         label: Integration
         icon {
