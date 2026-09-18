@@ -27,7 +27,10 @@ page 190 (
         }
         appearance {
             template: @/title-bar
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--compactTitle
+            ]
         }
         componentAppearance {
             breadcrumbTemplate: @/breadcrumb
@@ -59,7 +62,10 @@ page 190 (
         }
         appearance {
             template: @/standard
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
+            ]
         }
         edit {
             enabled: true

@@ -27,7 +27,10 @@ page 90 (
         }
         appearance {
             template: @/title-bar
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--compactTitle
+            ]
         }
         componentAppearance {
             breadcrumbTemplate: @/breadcrumb
@@ -66,7 +69,10 @@ page 90 (
         }
         appearance {
             template: @/interactive-report
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
+            ]
         }
         link {
             linkColumn: customTarget

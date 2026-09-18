@@ -27,7 +27,10 @@ page 30 (
         }
         appearance {
             template: @/title-bar
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--compactTitle
+            ]
         }
         componentAppearance {
             breadcrumbTemplate: @/breadcrumb
@@ -62,7 +65,10 @@ page 30 (
         }
         appearance {
             template: @/interactive-report
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
+            ]
         }
         pagination {
             type: rowRangesXToY
