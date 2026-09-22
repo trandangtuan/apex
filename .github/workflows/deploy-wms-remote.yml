@@ -9,6 +9,10 @@ name: Deploy WMS to remote APEX
 # Required repo secret:
 #   WMS_DB_CONNECT_STRING - full SQLcl connect string, e.g. "26HOUSE/<password>@18.181.77.39:1521/FREEPDB1"
 # Add it under Settings -> Secrets and variables -> Actions.
+#
+# Runs on a self-hosted runner (not GitHub-hosted ubuntu-latest) to avoid
+# GitHub Actions minutes billing entirely -- see .github/self-hosted-runner/
+# for how to register one via Docker.
 
 on:
   push:
@@ -25,7 +29,7 @@ env:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Checkout
         uses: actions/checkout@v4

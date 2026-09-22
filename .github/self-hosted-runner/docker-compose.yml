@@ -1,0 +1,20 @@
+services:
+  wms-deploy-runner:
+    image: myoung34/github-runner:latest
+    restart: unless-stopped
+    environment:
+      REPO_URL: "https://github.com/trandangtuan/apex"
+      RUNNER_NAME: "wms-deploy-runner"
+      RUNNER_TOKEN: "${RUNNER_TOKEN:?set RUNNER_TOKEN in .env, see README.md}"
+      RUNNER_WORKDIR: "/tmp/runner/work"
+      LABELS: "self-hosted,linux,x64,wms"
+      RUNNER_SCOPE: "repo"
+      DISABLE_AUTO_UPDATE: "true"
+      EPHEMERAL: "false"
+    volumes:
+      - runner-config:/actions-runner
+      - runner-work:/tmp/runner/work
+
+volumes:
+  runner-config:
+  runner-work:

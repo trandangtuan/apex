@@ -152,6 +152,8 @@ Server remote (`wms_remote`, app id 100, workspace `26HOUSE`) được **tự đ
 
 Cần cấu hình 1 secret trong repo GitHub trước khi pipeline chạy được: `WMS_DB_CONNECT_STRING` (Settings → Secrets and variables → Actions), dạng `26HOUSE/<password>@18.181.77.39:1521/FREEPDB1` — xem chi tiết trong file workflow. Deploy lên local dev (mục 3.1–3.3, kết nối `admin_freepdb1`) vẫn phải chạy tay như trước, vì đó là DB chạy trong Docker chỉ máy dev mới truy cập được.
 
+Pipeline chạy trên **self-hosted runner** (Docker), không dùng runner tính phí của GitHub — xem `.github/self-hosted-runner/README.md` để đăng ký runner. Nếu chưa đăng ký runner nào, job trên GitHub Actions sẽ đứng chờ (queued) mãi, không có gì nhận job.
+
 ## 8. Tài liệu liên quan
 
 - [`26house-new-system.docx`](26house-new-system.docx) — yêu cầu nghiệp vụ gốc.
