@@ -5,6 +5,8 @@ description: Build a clean APEXlang app copy, validate it, and import (deploy) t
 
 Follow this procedure exactly. Do not skip the clean-copy step or the post-import diff — both have caused real failures on this project before (see `CLAUDE.md`).
 
+**Deploying to the remote target is now automated on merge to `main`** via `.github/workflows/deploy-wms-remote.yml` (GitHub Actions) — it runs the same §3/§5B/§3.1-3.2 steps below (new `db/ddl` files, full `db/plsql` set, then clean-copy + `apex import -id 100`) whenever the corresponding paths change on `main`. Requires the repo secret `WMS_DB_CONNECT_STRING` to be set (Settings → Secrets and variables → Actions) — see the workflow file header for the exact format. `db/seed/` (demo data) is intentionally excluded from the automated pipeline. The manual procedure below is still the reference (and still needed for local dev target §5A, or to debug/re-run a failed CI deploy).
+
 ## 1. Known targets
 
 | Target name | Connection | `--workspaceid` | Remote `application_id` | Import method |
