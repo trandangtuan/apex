@@ -84,52 +84,19 @@ jobs:
         if: steps.changes.outputs.ddl == 'true'
         env:
           WMS_DB_CONNECT_STRING: ${{ secrets.WMS_DB_CONNECT_STRING }}
-        run: |
-          for f in $(grep '^db/ddl/' /tmp/changed_files.txt | sort); do
-            if [ ! -f "$f" ]; then
-              echo "=== skip $f (removed by this merge) ==="
-              continue
-            fi
-            echo "=== applying $f ==="
-            sql -S "$WMS_DB_CONNECT_STRING" <<SQL
-whenever sqlerror exit sql.sqlcode rollback
-@$f
-exit
-SQL
-          done
+        run: bash .github/scripts/deploy-ddl.sh
 
       - name: Deploy PL/SQL packages (db/plsql, full set, CREATE OR REPLACE is idempotent)
         if: steps.changes.outputs.plsql == 'true'
         env:
           WMS_DB_CONNECT_STRING: ${{ secrets.WMS_DB_CONNECT_STRING }}
-        run: |
-          for f in pkg_item pkg_location pkg_lot pkg_inventory pkg_inbound pkg_outbound pkg_picking pkg_packing pkg_shipment pkg_quality pkg_integration_out pkg_integration_in; do
-            echo "=== applying db/plsql/$f.sql ==="
-            sql -S "$WMS_DB_CONNECT_STRING" <<SQL
-whenever sqlerror exit sql.sqlcode rollback
-@db/plsql/$f.sql
-exit
-SQL
-          done
+        run: bash .github/scripts/deploy-plsql.sh
 
       - name: Check for PL/SQL compile errors
         if: steps.changes.outputs.plsql == 'true' || steps.changes.outputs.ddl == 'true'
         env:
           WMS_DB_CONNECT_STRING: ${{ secrets.WMS_DB_CONNECT_STRING }}
-        run: |
-          sql -S "$WMS_DB_CONNECT_STRING" <<'SQL' > /tmp/user_errors.txt
-set heading off
-set feedback off
-set pagesize 0
-set linesize 200
-select name || ' ' || type || ' line ' || line || ': ' || text from user_errors order by name, type, sequence;
-exit
-SQL
-          cat /tmp/user_errors.txt
-          if [ -s /tmp/user_errors.txt ] && grep -q '[A-Za-z]' /tmp/user_errors.txt; then
-            echo "::error::PL/SQL compile errors found in user_errors, see log above"
-            exit 1
-          fi
+        run: bash .github/scripts/check-plsql-errors.sh
 
       - name: Build clean APEXlang app copy
         if: steps.changes.outputs.apex == 'true'
@@ -148,20 +115,10 @@ SQL
         if: steps.changes.outputs.apex == 'true'
         env:
           WMS_DB_CONNECT_STRING: ${{ secrets.WMS_DB_CONNECT_STRING }}
-        run: |
-          sql -S /nolog <<SQL
-whenever sqlerror exit sql.sqlcode
-connect $WMS_DB_CONNECT_STRING
-apex import -input "$CLEAN_APP_PATH" -id $WMS_APP_ID -workspaceid $WMS_WORKSPACE_ID
-exit
-SQL
+        run: bash .github/scripts/import-apex.sh
 
       - name: Verify import (page count sanity check)
         if: steps.changes.outputs.apex == 'true'
         env:
           WMS_DB_CONNECT_STRING: ${{ secrets.WMS_DB_CONNECT_STRING }}
-        run: |
-          sql -S "$WMS_DB_CONNECT_STRING" <<SQL
-select count(*) page_count from apex_application_pages where application_id = $WMS_APP_ID;
-exit
-SQL
+        run: bash .github/scripts/verify-import.sh
