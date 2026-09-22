@@ -1,4 +1,5 @@
 -- FR-01: CRUD API for the item / SKU catalog.
+-- (comment-only change: CI deploy pipeline smoke test)
 
 set define off
 
