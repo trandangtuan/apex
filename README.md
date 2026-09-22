@@ -146,7 +146,13 @@ echo "select page_id, page_name from apex_application_pages where application_id
   | sql -S "ADMIN/<password>@localhost:1521/FREEPDB1"
 ```
 
-## 7. Tài liệu liên quan
+## 7. Deploy tự động (CI/CD)
+
+Server remote (`wms_remote`, app id 100, workspace `26HOUSE`) được **tự động deploy khi merge vào branch `main`** qua GitHub Actions (`.github/workflows/deploy-wms-remote.yml`): chạy các file `db/ddl/` mới thêm/đổi trong lần merge đó (không rerun file cũ vì `create table` không idempotent), toàn bộ package trong `db/plsql/` (idempotent, luôn rerun hết), rồi build bản sao sạch và import trang `.apx` vào app 100 — đúng quy trình thủ công ở mục 3.1–3.3 và `.claude/skills/deploy/SKILL.md`. `db/seed/` (dữ liệu demo) **không** nằm trong pipeline tự động, tiếp tục chạy tay khi cần.
+
+Cần cấu hình 1 secret trong repo GitHub trước khi pipeline chạy được: `WMS_DB_CONNECT_STRING` (Settings → Secrets and variables → Actions), dạng `26HOUSE/<password>@18.181.77.39:1521/FREEPDB1` — xem chi tiết trong file workflow. Deploy lên local dev (mục 3.1–3.3, kết nối `admin_freepdb1`) vẫn phải chạy tay như trước, vì đó là DB chạy trong Docker chỉ máy dev mới truy cập được.
+
+## 8. Tài liệu liên quan
 
 - [`26house-new-system.docx`](26house-new-system.docx) — yêu cầu nghiệp vụ gốc.
 - [`PROJECT-PLAN.md`](PROJECT-PLAN.md) — kế hoạch tổng, mô hình dữ liệu, mapping module, rào chắn tuân thủ.
