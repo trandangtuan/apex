@@ -41,11 +41,17 @@ jobs:
         run: |
           BEFORE="${{ github.event.before }}"
           AFTER="${{ github.sha }}"
-          if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+          if [ -n "$BEFORE" ] && [ "$BEFORE" != "0000000000000000000000000000000000000000" ]; then
+            git diff --name-only "$BEFORE" "$AFTER" > /tmp/changed_files.txt
+          elif git rev-parse --verify --quiet HEAD~1 > /dev/null; then
+            # No usable "before" SHA (e.g. workflow_dispatch, or first push of a new
+            # branch) -- fall back to just the latest commit instead of treating
+            # every file in the repo as "changed" (which would replay old,
+            # non-idempotent db/ddl files against a DB that already has them).
+            git diff --name-only HEAD~1 HEAD > /tmp/changed_files.txt
+          else
             EMPTY_TREE=$(git hash-object -t tree /dev/null)
             git diff --name-only "$EMPTY_TREE" "$AFTER" > /tmp/changed_files.txt
-          else
-            git diff --name-only "$BEFORE" "$AFTER" > /tmp/changed_files.txt
           fi
           echo "----- changed files since previous main tip -----"
           cat /tmp/changed_files.txt
